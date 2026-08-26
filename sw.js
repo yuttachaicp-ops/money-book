@@ -1,5 +1,5 @@
 /* สมุดรายรับ–รายจ่าย — service worker (offline-first) */
-const CACHE = "money-book-v1";
+const CACHE = "money-book-v2";
 const ASSETS = [
   "./",
   "./index.html",

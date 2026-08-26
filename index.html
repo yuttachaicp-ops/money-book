@@ -69,9 +69,10 @@ button{cursor:pointer}
 .topbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
 .brand{display:flex;gap:12px;align-items:center;min-width:0}
 .mark{
-  width:42px;height:42px;flex:none;border-radius:12px;background:var(--accent);color:var(--accent-ink);
-  display:grid;place-items:center;font-family:"IBM Plex Mono",monospace;font-size:21px;font-weight:600;
+  width:44px;height:44px;flex:none;border-radius:12px;overflow:hidden;
+  display:grid;place-items:center;
 }
+.mark img{width:100%;height:100%;display:block;object-fit:contain}
 .brand h1{font-size:20px}
 .brand p{margin:1px 0 0;font-size:12.5px;color:var(--ink-3)}
 .topbar-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -284,7 +285,7 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
 <div class="app">
   <header class="topbar">
     <div class="brand">
-      <div class="mark">฿</div>
+      <div class="mark"><img src="icons/icon-192.png" alt="" width="44" height="44"></div>
       <div>
         <h1>สมุดรายรับ–รายจ่าย</h1>
         <p>พิมพ์สูตรในช่องจำนวนเงินได้เลย เช่น <span class="num">85*3+120</span></p>
