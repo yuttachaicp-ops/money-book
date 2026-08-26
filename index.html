@@ -28,6 +28,11 @@
   --expense:#C25028; --expense-soft:#FAE8E0;
   --shadow:0 1px 2px rgba(22,32,31,.05), 0 8px 24px -12px rgba(22,32,31,.16);
   --r:10px;
+  /* categorical slots — validated light, surface #FFFFFF (adjacent CVD ΔE 12.2, normal 19.9, all ≥3:1) */
+  --s1:#00897B; --s2:#C25028; --s3:#3E72AE; --s4:#9C7407;
+  --s5:#9A4E86; --s6:#5F8230; --s7:#4E52B5; --s8:#B03C3C;
+  --s-other:#8A9793;
+  --grid:#E7ECEA;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -38,6 +43,11 @@
     --income:#3FC7B4; --income-soft:#12302D;
     --expense:#F0885C; --expense-soft:#33211A;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    /* categorical slots — validated dark, surface #18201F (adjacent CVD ΔE 12.2, normal 19.4, all ≥3:1) */
+    --s1:#23A08F; --s2:#D9663C; --s3:#5A8FD6; --s4:#B5851C;
+    --s5:#BB6BA3; --s6:#7FA246; --s7:#7C80E0; --s8:#D65F5F;
+    --s-other:#6E7B78;
+    --grid:#26312F;
   }
 }
 :root[data-theme="dark"]{
@@ -48,6 +58,11 @@
   --income:#3FC7B4; --income-soft:#12302D;
   --expense:#F0885C; --expense-soft:#33211A;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  /* categorical slots — validated dark, surface #18201F (adjacent CVD ΔE 12.2, normal 19.4, all ≥3:1) */
+  --s1:#23A08F; --s2:#D9663C; --s3:#5A8FD6; --s4:#B5851C;
+  --s5:#BB6BA3; --s6:#7FA246; --s7:#7C80E0; --s8:#D65F5F;
+  --s-other:#6E7B78;
+  --grid:#26312F;
 }
 
 *{box-sizing:border-box}
@@ -225,24 +240,82 @@ tfoot .lab{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:va
 .empty strong{display:block;color:var(--ink-2);font-weight:500;margin-bottom:4px;font-size:15px}
 .empty span{font-size:13.5px}
 
-/* ---------- breakdown ---------- */
-.bd-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
-@media (max-width:760px){.bd-grid{grid-template-columns:1fr}}
-.bd{padding:14px 16px 16px}
-.bd + .bd{border-left:1px solid var(--line)}
-@media (max-width:760px){.bd + .bd{border-left:none;border-top:1px solid var(--line)}}
-.bd h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px;font-weight:600}
-.bars{display:flex;flex-direction:column;gap:9px}
-.bar-row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline}
-.bar-row .bl{font-size:13.5px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bar-row .bv{font-family:"IBM Plex Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink)}
-.bar-row .bp{font-size:11.5px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
-.track{grid-column:1/-1;height:7px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-top:2px}
-.fill{height:100%;border-radius:4px;transition:width .35s cubic-bezier(.4,0,.2,1)}
-.bd.out .fill{background:var(--expense)}
-.bd.in .fill{background:var(--income)}
-.bar-row:hover .bl,.bar-row:hover .bp{color:var(--ink)}
-.bd .none{font-size:13.5px;color:var(--ink-3);padding:8px 0}
+/* ---------- charts ---------- */
+.chart-pad{padding:18px 16px 14px}
+.head-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.key{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2)}
+.key-item{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.sw{width:11px;height:11px;border-radius:3px;flex:none}
+.sw.in{background:var(--income)}
+.sw.out{background:var(--expense)}
+.sw.net{background:linear-gradient(90deg,var(--income) 50%,var(--expense) 50%)}
+@media (max-width:640px){.net-key{display:none}}
+.chart-note{margin:10px 0 0;font-size:11.5px;color:var(--ink-3)}
+
+/* monthly grouped bars */
+.trend{position:relative;display:grid;grid-template-columns:auto 1fr;gap:0 10px}
+.trend .yaxis{display:flex;flex-direction:column;justify-content:space-between;
+  height:210px;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-3);
+  text-align:right;font-variant-numeric:tabular-nums}
+.trend .plot{position:relative;height:210px}
+.trend .grid-lines{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
+.trend .grid-lines i{display:block;height:1px;background:var(--grid)}
+.trend .grid-lines i:last-child{background:var(--line-strong)}
+.trend .groups{position:absolute;inset:0;display:flex;align-items:flex-end;gap:2px}
+.mgroup{flex:1;min-width:0;height:100%;display:flex;align-items:flex-end;justify-content:center;
+  gap:2px;position:relative;border-radius:5px 5px 0 0;cursor:default}
+.mgroup:hover,.mgroup.on{background:color-mix(in srgb, var(--ink) 6%, transparent)}
+.mgroup .bar{width:min(15px,40%);border-radius:4px 4px 0 0;transition:height .45s cubic-bezier(.4,0,.2,1)}
+.mgroup .bar.in{background:var(--income)}
+.mgroup .bar.out{background:var(--expense)}
+.mgroup .bar.zero{height:2px!important;background:var(--line-strong);border-radius:2px}
+.trend .netrow{grid-column:2;display:flex;gap:2px;margin-top:3px}
+.trend .netrow span{flex:1;min-width:0;text-align:center;font-family:"IBM Plex Mono",monospace;
+  font-size:10.5px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
+.trend .netrow .pos{color:var(--income)}
+.trend .netrow .neg{color:var(--expense)}
+.trend .netrow .nil{color:var(--ink-3);opacity:.5}
+@media (max-width:640px){.trend .netrow{display:none}}
+.trend .xaxis{grid-column:2;display:flex;gap:2px;margin-top:7px}
+.trend .xaxis span{flex:1;min-width:0;text-align:center;font-size:11px;color:var(--ink-3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trend .xaxis span.now{color:var(--ink);font-weight:600}
+
+.tip{position:absolute;z-index:20;pointer-events:none;opacity:0;transform:translate(-50%,-108%);
+  background:var(--ink);color:var(--ground);border-radius:8px;padding:8px 11px;font-size:12.5px;
+  line-height:1.5;white-space:nowrap;box-shadow:0 8px 22px -8px rgba(0,0,0,.5);transition:opacity .12s}
+.tip.show{opacity:1}
+.tip b{display:block;font-size:12px;opacity:.7;font-weight:500;margin-bottom:3px}
+.tip .r{display:flex;justify-content:space-between;gap:14px;font-variant-numeric:tabular-nums}
+.tip .r span:last-child{font-family:"IBM Plex Mono",monospace}
+.tip .r.sep{border-top:1px solid color-mix(in srgb, var(--ground) 30%, transparent);margin-top:4px;padding-top:4px}
+
+/* donut */
+.donut-wrap{display:grid;grid-template-columns:220px minmax(0,1fr);gap:14px;padding:18px 16px 20px;align-items:center}
+@media (max-width:700px){.donut-wrap{grid-template-columns:1fr;justify-items:center;gap:14px}}
+.donut-fig{position:relative;width:200px;height:200px;justify-self:center}
+.donut-fig svg{width:100%;height:100%;transform:rotate(-90deg)}
+.donut-fig circle{fill:none;stroke-width:26;transition:stroke-width .15s, opacity .15s}
+.donut-fig circle.dim{opacity:.3}
+.donut-fig circle.hi{stroke-width:31}
+.donut-center{position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none}
+.donut-center .dk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.donut-center .dv{font-family:"IBM Plex Mono",monospace;font-size:20px;font-weight:600;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;line-height:1.3}
+.donut-center .dn{font-size:11.5px;color:var(--ink-3)}
+
+.dlegend{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px;width:100%;max-width:480px}
+.dlegend li{display:grid;grid-template-columns:12px 1fr auto auto;gap:10px;align-items:center;
+  padding:6px 8px;border-radius:7px;font-size:13.5px;cursor:default}
+.dlegend li:hover,.dlegend li.on{background:var(--surface-2)}
+.dlegend .chip{width:12px;height:12px;border-radius:3px}
+.dlegend .nm{color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dlegend li:hover .nm,.dlegend li.on .nm{color:var(--ink)}
+.dlegend .amt{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink)}
+.dlegend .pc{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3);min-width:34px;text-align:right}
+
+.seg.tiny label{padding:5px 12px;font-size:13px}
+.chart-empty{padding:34px 12px;text-align:center;color:var(--ink-3);font-size:13.5px}
 
 /* ---------- tools ---------- */
 .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:2px 2px 0}
@@ -385,19 +458,31 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
 
   <section class="card">
     <div class="card-head">
-      <h2>สรุปตามหมวดหมู่</h2>
-      <span class="hint" id="bdHint"></span>
-    </div>
-    <div class="bd-grid">
-      <div class="bd out">
-        <h3>รายจ่าย</h3>
-        <div class="bars" id="barsOut"></div>
-      </div>
-      <div class="bd in">
-        <h3>รายรับ</h3>
-        <div class="bars" id="barsIn"></div>
+      <h2>แนวโน้มรายเดือน</h2>
+      <div class="key">
+        <span class="key-item"><i class="sw in"></i>รายรับ</span>
+        <span class="key-item"><i class="sw out"></i>รายจ่าย</span>
+        <span class="key-item net-key"><i class="sw net"></i>คงเหลือรายเดือน</span>
       </div>
     </div>
+    <div class="chart-pad">
+      <div class="trend" id="trend"></div>
+      <p class="chart-note" id="trendNote"></p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>สัดส่วนตามหมวดหมู่</h2>
+      <div class="head-right">
+        <div class="seg tiny" role="radiogroup" aria-label="ประเภทที่แสดงในกราฟวงกลม">
+          <label><input type="radio" name="dtype" value="expense" checked><span>รายจ่าย</span></label>
+          <label><input type="radio" name="dtype" value="income"><span>รายรับ</span></label>
+        </div>
+        <span class="hint" id="bdHint"></span>
+      </div>
+    </div>
+    <div class="donut-wrap" id="donutWrap"></div>
   </section>
 
   <div class="tools">
@@ -636,29 +721,188 @@ function renderTable() {
     <td class="r money${inc - exp < 0 ? " out" : ""}">${fmt(inc - exp)}</td>
     <td></td></tr>` : "";
 }
-function renderBars() {
-  const rows = state.tx.filter(inPeriod);
-  const build = (type, el) => {
-    const m = new Map();
-    rows.filter((t) => t.type === type).forEach((t) => m.set(t.cat, (m.get(t.cat) || 0) + t.amount));
-    const arr = [...m.entries()].sort((a, b) => b[1] - a[1]);
-    const total = arr.reduce((s, x) => s + x[1], 0);
-    if (!arr.length) { $(el).innerHTML = '<p class="none">ยังไม่มีข้อมูล</p>'; return; }
-    const max = arr[0][1];
-    $(el).innerHTML = arr.map(([cid, v]) => {
-      const pct = total ? Math.round(v / total * 100) : 0;
-      return `<div class="bar-row" title="${esc(catName(cid))} · ${fmt(v)} บาท (${pct}%)">
-        <span class="bl">${esc(catName(cid))}</span>
-        <span><span class="bv">${fmt0(v)}</span> <span class="bp">${pct}%</span></span>
-        <div class="track"><div class="fill" style="width:${max ? (v / max * 100).toFixed(1) : 0}%"></div></div>
-      </div>`;
-    }).join("");
-  };
-  build("expense", "barsOut");
-  build("income", "barsIn");
+/* ============ charts ============ */
+const SLOTS = ["--s1","--s2","--s3","--s4","--s5","--s6","--s7","--s8"];
+// colour follows the CATEGORY, never its rank: the slot comes from the category's
+// stable position in state.cats, so filtering never repaints the survivors.
+function catColor(cid) {
+  const i = state.cats.findIndex((c) => c.id === cid);
+  return i < 0 ? "var(--s-other)" : `var(${SLOTS[i % SLOTS.length]})`;
+}
+function niceStep(v) {
+  if (v <= 0) return 25;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const m of [1, 2, 2.5, 5, 10]) if (v <= mag * m) return mag * m;
+  return mag * 10;
+}
+function shortBaht(n) {
+  const a = Math.abs(n);
+  if (a >= 1e6) return +(n / 1e6).toFixed(2) + "M";
+  if (a >= 1e3) return +(n / 1e3).toFixed(1) + "k";
+  return String(Math.round(n));
+}
+function monthsBack(n) {
+  const out = [];
+  const now = todayISO().slice(0, 7);
+  let [y, m] = now.split("-").map(Number);
+  const latest = state.tx.reduce((a, t) => t.date.slice(0, 7) > a ? t.date.slice(0, 7) : a, now);
+  [y, m] = latest.split("-").map(Number);
+  for (let i = 0; i < n; i++) {
+    out.unshift(y + "-" + String(m).padStart(2, "0"));
+    m--; if (m === 0) { m = 12; y--; }
+  }
+  return out;
+}
+
+/* ---- tooltip ---- */
+let tipEl = null;
+function tip() {
+  if (!tipEl) { tipEl = document.createElement("div"); tipEl.className = "tip"; document.body.appendChild(tipEl); }
+  return tipEl;
+}
+function showTip(html, anchor) {
+  const t = tip();
+  t.innerHTML = html;
+  const r = anchor.getBoundingClientRect();
+  t.style.left = (r.left + r.width / 2 + window.scrollX) + "px";
+  t.style.top = (r.top + window.scrollY) + "px";
+  t.classList.add("show");
+}
+function hideTip() { if (tipEl) tipEl.classList.remove("show"); }
+
+/* ---- monthly grouped bars ---- */
+function renderTrend() {
+  const el = $("trend");
+  const note = $("trendNote");
+  if (!state.tx.length) {
+    el.innerHTML = '<p class="chart-empty" style="grid-column:1/-1">ยังไม่มีข้อมูล — บันทึกรายการแรกแล้วกราฟจะขึ้นให้เอง</p>';
+    note.textContent = ""; return;
+  }
+  const MON = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+  const months = monthsBack(12);
+  const data = months.map((ym) => {
+    const rows = state.tx.filter((t) => t.date.slice(0, 7) === ym);
+    const inc = rows.filter((t) => t.type === "income").reduce((a, t) => a + t.amount, 0);
+    const exp = rows.filter((t) => t.type === "expense").reduce((a, t) => a + t.amount, 0);
+    return { ym, inc, exp, net: inc - exp, n: rows.length };
+  });
+  const peak = Math.max(...data.map((d) => Math.max(d.inc, d.exp)), 0);
+  const TICKS = 4;
+  const step = niceStep(peak / TICKS);
+  const max = step * TICKS;
+  const ticks = Array.from({ length: TICKS + 1 }, (_, i) => max - step * i);
+  const cur = todayISO().slice(0, 7);
+
+  el.innerHTML = `
+    <div class="yaxis" aria-hidden="true">${ticks.map((t) => `<span>${t ? shortBaht(t) : "0"}</span>`).join("")}</div>
+    <div class="plot">
+      <div class="grid-lines" aria-hidden="true">${ticks.map(() => "<i></i>").join("")}</div>
+      <div class="groups">${data.map((d, i) => {
+        const hi = d.inc ? Math.max(2, (d.inc / max) * 100) : 0;
+        const he = d.exp ? Math.max(2, (d.exp / max) * 100) : 0;
+        return `<div class="mgroup" data-i="${i}" tabindex="0" role="img"
+          aria-label="${esc(MON[+d.ym.slice(5) - 1] + " " + ((+d.ym.slice(0,4)) + 543) + " รายรับ " + fmt(d.inc) + " รายจ่าย " + fmt(d.exp))}">
+          <div class="bar in${d.inc ? "" : " zero"}" style="height:${hi}%"></div>
+          <div class="bar out${d.exp ? "" : " zero"}" style="height:${he}%"></div>
+        </div>`;
+      }).join("")}</div>
+    </div>
+    <div class="xaxis" aria-hidden="true">${data.map((d) =>
+      `<span class="${d.ym === cur ? "now" : ""}">${MON[+d.ym.slice(5) - 1]}</span>`).join("")}</div>
+    <div class="netrow" aria-hidden="true">${data.map((d) => d.n
+      ? `<span class="${d.net < 0 ? "neg" : "pos"}">${d.net > 0 ? "+" : d.net < 0 ? "−" : ""}${shortBaht(Math.abs(d.net))}</span>`
+      : "<span class=\"nil\">·</span>").join("")}</div>`;
+
+  const span = thMonth(months[0]) + " – " + thMonth(months[months.length - 1]);
+  note.textContent = span + " · ตัวเลขใต้ชื่อเดือนคือยอดคงเหลือ (รายรับ − รายจ่าย) · แตะหรือเลื่อนเมาส์บนแท่งเพื่อดูตัวเลขเต็ม";
+
+  el.querySelectorAll(".mgroup").forEach((g) => {
+    const d = data[+g.dataset.i];
+    const html = `<b>${esc(MON[+d.ym.slice(5) - 1] + " " + ((+d.ym.slice(0,4)) + 543))}</b>
+      <div class="r"><span>รายรับ</span><span>${fmt(d.inc)}</span></div>
+      <div class="r"><span>รายจ่าย</span><span>${fmt(d.exp)}</span></div>
+      <div class="r sep"><span>คงเหลือ</span><span>${fmt(d.net)}</span></div>`;
+    const on = () => { g.classList.add("on"); showTip(html, g); };
+    const off = () => { g.classList.remove("on"); hideTip(); };
+    g.addEventListener("mouseenter", on); g.addEventListener("mouseleave", off);
+    g.addEventListener("focus", on); g.addEventListener("blur", off);
+  });
+}
+
+/* ---- category donut ---- */
+function renderDonut() {
+  const wrap = $("donutWrap");
+  const type = (document.querySelector('input[name="dtype"]:checked') || {}).value || "expense";
+  const rows = state.tx.filter((t) => inPeriod(t) && t.type === type);
   const p = periodKey();
   $("bdHint").textContent = p === "all" ? "ทุกช่วงเวลา" : thMonth(p);
+
+  if (!rows.length) {
+    wrap.innerHTML = `<p class="chart-empty" style="grid-column:1/-1">ยังไม่มี${type === "income" ? "รายรับ" : "รายจ่าย"}ในช่วงนี้</p>`;
+    return;
+  }
+  const m = new Map();
+  rows.forEach((t) => m.set(t.cat, (m.get(t.cat) || 0) + t.amount));
+  let arr = [...m.entries()].map(([cid, v]) => ({ cid, name: catName(cid), v, color: catColor(cid) }))
+    .sort((a, b) => b.v - a.v);
+  const total = arr.reduce((a, x) => a + x.v, 0);
+  if (arr.length > 8) {
+    const rest = arr.slice(7);
+    arr = arr.slice(0, 7).concat([{ cid: "__other", name: `อื่น ๆ (${rest.length} หมวด)`, v: rest.reduce((a, x) => a + x.v, 0), color: "var(--s-other)" }]);
+  }
+
+  const GAP = arr.length > 1 ? 1.1 : 0;   // 2px surface gap between segments
+  let acc = 0;
+  const segs = arr.map((x) => {
+    const pct = total ? (x.v / total) * 100 : 0;
+    const len = Math.max(0.6, pct - GAP);
+    const seg = { ...x, pct, dash: `${len} ${100 - len}`, off: -acc };
+    acc += pct;
+    return seg;
+  });
+
+  wrap.innerHTML = `
+    <div class="donut-fig">
+      <svg viewBox="0 0 200 200" role="img" aria-label="สัดส่วน${type === "income" ? "รายรับ" : "รายจ่าย"}ตามหมวดหมู่">
+        <circle cx="100" cy="100" r="74" pathLength="100" style="stroke:var(--surface-2);stroke-width:26"></circle>
+        ${segs.map((sg, i) => `<circle data-i="${i}" cx="100" cy="100" r="74" pathLength="100"
+          stroke-dasharray="${sg.dash}" stroke-dashoffset="${sg.off}"
+          style="stroke:${sg.color}" stroke-linecap="butt"></circle>`).join("")}
+      </svg>
+      <div class="donut-center">
+        <span class="dk">${type === "income" ? "รายรับรวม" : "รายจ่ายรวม"}</span>
+        <span class="dv" id="dCenter">${fmt0(total)}</span>
+        <span class="dn" id="dCenterSub">${arr.length} หมวด</span>
+      </div>
+    </div>
+    <ul class="dlegend">${segs.map((sg, i) => `<li data-i="${i}">
+        <span class="chip" style="background:${sg.color}"></span>
+        <span class="nm">${esc(sg.name)}</span>
+        <span class="amt">${fmt0(sg.v)}</span>
+        <span class="pc">${sg.pct < 1 ? "<1" : Math.round(sg.pct)}%</span>
+      </li>`).join("")}</ul>`;
+
+  const circles = [...wrap.querySelectorAll("circle[data-i]")];
+  const items = [...wrap.querySelectorAll(".dlegend li")];
+  const center = $("dCenter"), sub = $("dCenterSub");
+  const focus = (i) => {
+    circles.forEach((c, k) => { c.classList.toggle("dim", k !== i); c.classList.toggle("hi", k === i); });
+    items.forEach((li, k) => li.classList.toggle("on", k === i));
+    center.textContent = fmt0(segs[i].v);
+    sub.textContent = segs[i].name + " · " + (segs[i].pct < 1 ? "<1" : Math.round(segs[i].pct)) + "%";
+  };
+  const reset = () => {
+    circles.forEach((c) => c.classList.remove("dim", "hi"));
+    items.forEach((li) => li.classList.remove("on"));
+    center.textContent = fmt0(total);
+    sub.textContent = arr.length + " หมวด";
+  };
+  [...circles, ...items].forEach((el2) => {
+    el2.addEventListener("mouseenter", () => focus(+el2.dataset.i));
+    el2.addEventListener("mouseleave", reset);
+  });
 }
+
 function renderFoot() {
   const msg = storageOK
     ? "ข้อมูลเก็บอยู่ในเครื่องนี้เท่านั้น ไม่ถูกส่งไปที่ไหน — ถ้าจะย้ายไปเครื่องอื่นให้กด “สำรองข้อมูล (JSON)” แล้วไปกด “นำเข้าข้อมูล” ที่เครื่องปลายทาง"
@@ -670,7 +914,8 @@ function render() {
   renderCatSelect();
   renderTiles();
   renderTable();
-  renderBars();
+  renderTrend();
+  renderDonut();
   renderFoot();
 }
 
@@ -862,7 +1107,9 @@ $("tbody").addEventListener("click", (e) => {
   else removeTx(id);
 });
 
-$("periodSel").addEventListener("change", () => { renderTiles(); renderTable(); renderBars(); });
+$("periodSel").addEventListener("change", () => { renderTiles(); renderTable(); renderDonut(); });
+document.querySelectorAll('input[name="dtype"]').forEach((r) => r.addEventListener("change", renderDonut));
+window.addEventListener("scroll", hideTip, { passive: true });
 $("q").addEventListener("input", renderTable);
 $("filterType").addEventListener("change", renderTable);
 
