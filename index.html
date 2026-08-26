@@ -1,0 +1,930 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="สมุดบันทึกรายรับรายจ่าย คิดเลข + − × ÷ ในช่องจำนวนเงินได้ ใช้งานออฟไลน์ ติดตั้งเป็นแอปได้">
+<meta name="theme-color" content="#F3F5F4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101615" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="สมุดบัญชี">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<title>สมุดรายรับรายจ่าย</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+</head>
+<body>
+<style>
+:root{
+  --ground:#F3F5F4; --surface:#FFFFFF; --surface-2:#EAEEED; --surface-3:#E0E6E4;
+  --line:#D8DFDD; --line-strong:#C3CDCA;
+  --ink:#16201F; --ink-2:#4E5C5A; --ink-3:#7E8C8A;
+  --accent:#2F4858; --accent-ink:#FFFFFF; --accent-soft:#E2EAEE;
+  --income:#0B7A6E; --income-soft:#E0F1EE;
+  --expense:#C25028; --expense-soft:#FAE8E0;
+  --shadow:0 1px 2px rgba(22,32,31,.05), 0 8px 24px -12px rgba(22,32,31,.16);
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#101615; --surface:#18201F; --surface-2:#212B29; --surface-3:#293533;
+    --line:#2C3836; --line-strong:#3B4A47;
+    --ink:#E9EFED; --ink-2:#A4B2AF; --ink-3:#788683;
+    --accent:#8FB3C7; --accent-ink:#101615; --accent-soft:#213038;
+    --income:#3FC7B4; --income-soft:#12302D;
+    --expense:#F0885C; --expense-soft:#33211A;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#101615; --surface:#18201F; --surface-2:#212B29; --surface-3:#293533;
+  --line:#2C3836; --line-strong:#3B4A47;
+  --ink:#E9EFED; --ink-2:#A4B2AF; --ink-3:#788683;
+  --accent:#8FB3C7; --accent-ink:#101615; --accent-soft:#213038;
+  --income:#3FC7B4; --income-soft:#12302D;
+  --expense:#F0885C; --expense-soft:#33211A;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans Thai","Noto Sans Thai",system-ui,sans-serif;
+  font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:"Anuphan","IBM Plex Sans Thai",system-ui,sans-serif;margin:0;text-wrap:balance;font-weight:600;letter-spacing:-.01em}
+.num{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+.app{max-width:1080px;margin:0 auto;padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(72px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:16px}
+
+/* ---------- top bar ---------- */
+.topbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+.brand{display:flex;gap:12px;align-items:center;min-width:0}
+.mark{
+  width:42px;height:42px;flex:none;border-radius:12px;background:var(--accent);color:var(--accent-ink);
+  display:grid;place-items:center;font-family:"IBM Plex Mono",monospace;font-size:21px;font-weight:600;
+}
+.brand h1{font-size:20px}
+.brand p{margin:1px 0 0;font-size:12.5px;color:var(--ink-3)}
+.topbar-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chip{
+  font-size:12px;padding:5px 10px;border-radius:999px;background:var(--surface-2);
+  color:var(--ink-2);border:1px solid var(--line);white-space:nowrap;
+}
+.chip[data-state="saving"]{color:var(--accent)}
+.chip[data-state="saved"]{color:var(--income);background:var(--income-soft);border-color:transparent}
+.chip[data-state="local"]{color:var(--ink-2)}
+
+.sel{
+  background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;
+  font-size:13.5px;color:var(--ink);
+}
+
+/* ---------- tiles ---------- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.tile{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;
+  display:flex;flex-direction:column;gap:2px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.tile::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--line-strong)}
+.tile.in::before{background:var(--income)}
+.tile.out::before{background:var(--expense)}
+.tile.net::before{background:var(--accent)}
+.tile .k{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.tile .v{font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1.25}
+.tile.in .v{color:var(--income)}
+.tile.out .v{color:var(--expense)}
+.tile .m{font-size:12px;color:var(--ink-3)}
+.tile .v.neg{color:var(--expense)}
+
+/* ---------- cards ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.card-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:13px 16px;border-bottom:1px solid var(--line);
+}
+.card-head h2{font-size:15px}
+.card-head .hint{font-size:12px;color:var(--ink-3)}
+
+/* ---------- entry form ---------- */
+.entry{padding:16px}
+.form-grid{display:grid;gap:12px;grid-template-columns:repeat(12,1fr)}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f > .flab{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.f input[type="text"],.f input[type="date"],.f select{
+  background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%;
+}
+.f input[type="text"]:hover,.f input[type="date"]:hover,.f select:hover{border-color:var(--line-strong)}
+.c-type{grid-column:span 12}
+.c-date{grid-column:span 3}
+.c-cat{grid-column:span 4}
+.c-name{grid-column:span 5}
+.c-amt{grid-column:span 8}
+.c-save{grid-column:span 4;justify-content:flex-end}
+@media (max-width:760px){
+  .c-date,.c-cat,.c-name,.c-amt,.c-save{grid-column:span 12}
+}
+
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+.seg label{
+  padding:7px 18px;border-radius:6px;font-size:14px;font-weight:500;color:var(--ink-2);
+  cursor:pointer;user-select:none;transition:background .12s,color .12s;
+}
+.seg input{position:absolute;opacity:0;width:0;height:0;margin:0}
+.seg label:has(input:checked){background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.seg label:has(input[value="income"]:checked){color:var(--income)}
+.seg label:has(input[value="expense"]:checked){color:var(--expense)}
+.seg label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+
+.amt-wrap{position:relative}
+.amt-wrap input{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:17px;font-weight:500;
+  padding-right:132px;letter-spacing:.01em;
+}
+.amt-eq{
+  position:absolute;right:11px;top:50%;transform:translateY(-50%);
+  font-family:"IBM Plex Mono",monospace;font-size:14px;font-weight:500;color:var(--ink-3);
+  pointer-events:none;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;
+}
+.amt-eq.ok{color:var(--ink)}
+.amt-eq.bad{color:var(--expense)}
+.keys{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.key{
+  border:1px solid var(--line);background:var(--surface-2);border-radius:7px;padding:4px 11px;
+  font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink-2);line-height:1.5;
+}
+.key:hover{background:var(--surface-3);color:var(--ink)}
+.key.wide{font-family:"IBM Plex Sans Thai",sans-serif}
+
+.btn{
+  border:1px solid transparent;border-radius:8px;padding:10px 20px;font-weight:600;font-size:14.5px;
+  background:var(--accent);color:var(--accent-ink);white-space:nowrap;
+}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:var(--surface);color:var(--ink-2);border-color:var(--line)}
+.btn.ghost:hover{background:var(--surface-2);color:var(--ink);filter:none}
+.btn.sm{padding:7px 13px;font-size:13px;font-weight:500}
+.form-actions{display:flex;gap:8px;align-items:flex-end;justify-content:flex-end;height:100%}
+@media (max-width:760px){.form-actions{justify-content:stretch}.form-actions .btn{flex:1}}
+
+/* ---------- toolbar ---------- */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toolbar input[type="search"]{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:7px 11px;
+  font-size:13.5px;min-width:170px;flex:1;
+}
+
+/* ---------- table ---------- */
+.tscroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead th{
+  text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);
+  font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface);
+}
+th.r,td.r{text-align:right}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr:last-child td{border-bottom:none}
+td.date{color:var(--ink-2);white-space:nowrap;font-size:13px}
+td.name{font-weight:500;min-width:150px}
+td.money{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.money.in{color:var(--income)}
+td.money.out{color:var(--expense)}
+td.money.run{color:var(--ink-2)}
+td.money.run.neg{color:var(--expense)}
+.tag{
+  display:inline-block;font-size:12px;padding:2px 9px;border-radius:999px;white-space:nowrap;
+  background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line);
+}
+.tag.in{background:var(--income-soft);color:var(--income);border-color:transparent}
+.tag.out{background:var(--expense-soft);color:var(--expense);border-color:transparent}
+.rowacts{display:flex;gap:3px;justify-content:flex-end;opacity:.35;transition:opacity .12s}
+tr:hover .rowacts,.rowacts:focus-within{opacity:1}
+.iconbtn{
+  border:none;background:transparent;color:var(--ink-2);padding:4px 7px;border-radius:6px;font-size:13.5px;line-height:1;
+}
+.iconbtn:hover{background:var(--surface-3);color:var(--ink)}
+tfoot td{padding:11px 12px;border-top:2px solid var(--line-strong);font-weight:600;background:var(--surface)}
+tfoot .lab{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+
+@media (max-width:620px){
+  thead th,tbody td{padding-left:9px;padding-right:9px;font-size:13.5px}
+  td.name{min-width:120px}
+  .tscroll{scrollbar-width:thin}
+}
+.empty{padding:44px 20px;text-align:center;color:var(--ink-3)}
+.empty strong{display:block;color:var(--ink-2);font-weight:500;margin-bottom:4px;font-size:15px}
+.empty span{font-size:13.5px}
+
+/* ---------- breakdown ---------- */
+.bd-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+@media (max-width:760px){.bd-grid{grid-template-columns:1fr}}
+.bd{padding:14px 16px 16px}
+.bd + .bd{border-left:1px solid var(--line)}
+@media (max-width:760px){.bd + .bd{border-left:none;border-top:1px solid var(--line)}}
+.bd h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px;font-weight:600}
+.bars{display:flex;flex-direction:column;gap:9px}
+.bar-row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline}
+.bar-row .bl{font-size:13.5px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-row .bv{font-family:"IBM Plex Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.bar-row .bp{font-size:11.5px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+.track{grid-column:1/-1;height:7px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-top:2px}
+.fill{height:100%;border-radius:4px;transition:width .35s cubic-bezier(.4,0,.2,1)}
+.bd.out .fill{background:var(--expense)}
+.bd.in .fill{background:var(--income)}
+.bar-row:hover .bl,.bar-row:hover .bp{color:var(--ink)}
+.bd .none{font-size:13.5px;color:var(--ink-3);padding:8px 0}
+
+/* ---------- tools ---------- */
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:2px 2px 0}
+.tools .spacer{flex:1}
+.foot{font-size:12px;color:var(--ink-3);line-height:1.7;padding:4px 2px}
+.foot code{font-family:"IBM Plex Mono",monospace;background:var(--surface-2);padding:1px 5px;border-radius:4px;font-size:11.5px}
+
+/* ---------- dialog ---------- */
+dialog{
+  border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);
+  padding:0;max-width:440px;width:calc(100% - 32px);box-shadow:0 24px 60px -20px rgba(0,0,0,.4);
+}
+dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
+.dlg-head{padding:15px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.dlg-head h2{font-size:16px}
+.dlg-body{padding:16px 18px;max-height:min(58vh,420px);overflow-y:auto}
+.dlg-foot{padding:13px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+.catlist{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.catlist .ci{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:7px}
+.catlist .ci:hover{background:var(--surface-2)}
+.catlist .ci .nm{flex:1;font-size:14px}
+.catgroup{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin:12px 0 5px}
+.catgroup:first-child{margin-top:0}
+.addcat{display:flex;gap:6px;border-top:1px solid var(--line);padding-top:13px}
+.addcat input{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px;min-width:0}
+.addcat select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 8px;font-size:13.5px}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translate(-50%,140%);
+  background:var(--ink);color:var(--ground);border-radius:10px;padding:10px 12px 10px 16px;
+  display:flex;align-items:center;gap:12px;font-size:14px;box-shadow:0 12px 32px -10px rgba(0,0,0,.5);
+  transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:50;max-width:calc(100% - 32px);
+}
+.toast.show{transform:translate(-50%,0)}
+.toast button{background:transparent;border:none;color:var(--ground);font-weight:600;text-decoration:underline;padding:4px 6px;font-size:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">฿</div>
+      <div>
+        <h1>สมุดรายรับ–รายจ่าย</h1>
+        <p>พิมพ์สูตรในช่องจำนวนเงินได้เลย เช่น <span class="num">85*3+120</span></p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <select id="periodSel" class="sel" aria-label="เลือกช่วงเวลา"></select>
+      <button id="installBtn" class="btn sm" hidden>ติดตั้งแอป</button>
+      <span id="saveChip" class="chip" data-state="idle">กำลังเปิด…</span>
+    </div>
+  </header>
+
+  <section class="tiles" id="tiles"></section>
+
+  <section class="card entry">
+    <div class="form-grid">
+      <div class="f c-type">
+        <span class="flab">เพิ่มรายการใหม่</span>
+        <div class="seg" role="radiogroup" aria-label="ประเภทรายการ">
+          <label><input type="radio" name="ttype" value="expense" checked><span>รายจ่าย</span></label>
+          <label><input type="radio" name="ttype" value="income"><span>รายรับ</span></label>
+        </div>
+      </div>
+      <div class="f c-date">
+        <label class="flab" for="txDate">วันที่</label>
+        <input type="date" id="txDate">
+      </div>
+      <div class="f c-cat">
+        <label class="flab" for="txCat">หมวดหมู่</label>
+        <select id="txCat"></select>
+      </div>
+      <div class="f c-name">
+        <label class="flab" for="txName">รายการ</label>
+        <input type="text" id="txName" placeholder="เช่น ค่าข้าวกลางวัน" autocomplete="off">
+      </div>
+      <div class="f c-amt">
+        <label class="flab" for="txAmt">จำนวนเงิน · คิดเลขได้ (+ − × ÷ วงเล็บ %)</label>
+        <div class="amt-wrap">
+          <input type="text" id="txAmt" class="num" inputmode="text" placeholder="120  หรือ  85*3+120" autocomplete="off">
+          <span class="amt-eq" id="txEq"></span>
+        </div>
+        <div class="keys" id="keys">
+          <button type="button" class="key" data-k="+">+</button>
+          <button type="button" class="key" data-k="-">−</button>
+          <button type="button" class="key" data-k="*">×</button>
+          <button type="button" class="key" data-k="/">÷</button>
+          <button type="button" class="key" data-k="(">(</button>
+          <button type="button" class="key" data-k=")">)</button>
+          <button type="button" class="key wide" data-k="*1.07">+ VAT 7%</button>
+          <button type="button" class="key wide" data-k="/1.07">ถอด VAT</button>
+          <button type="button" class="key wide" data-k="clear">ล้าง</button>
+        </div>
+      </div>
+      <div class="f c-save">
+        <div class="form-actions">
+          <button type="button" class="btn ghost sm" id="cancelEdit" hidden>ยกเลิก</button>
+          <button type="button" class="btn" id="saveBtn">บันทึกรายการ</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>ตารางรายการ</h2>
+      <div class="toolbar">
+        <input type="search" id="q" placeholder="ค้นหารายการ / หมวดหมู่" aria-label="ค้นหา">
+        <select id="filterType" class="sel" aria-label="กรองประเภท">
+          <option value="all">ทุกประเภท</option>
+          <option value="income">เฉพาะรายรับ</option>
+          <option value="expense">เฉพาะรายจ่าย</option>
+        </select>
+      </div>
+    </div>
+    <div class="tscroll">
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th style="width:104px">วันที่</th>
+            <th>รายการ</th>
+            <th style="width:150px">หมวดหมู่</th>
+            <th class="r" style="width:112px">รายรับ</th>
+            <th class="r" style="width:112px">รายจ่าย</th>
+            <th class="r" style="width:120px">คงเหลือสะสม</th>
+            <th style="width:74px"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+        <tfoot id="tfoot"></tfoot>
+      </table>
+    </div>
+    <div class="empty" id="empty" hidden>
+      <strong>ยังไม่มีรายการในช่วงนี้</strong>
+      <span>กรอกแบบฟอร์มด้านบนเพื่อเริ่มบันทึกรายการแรก</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>สรุปตามหมวดหมู่</h2>
+      <span class="hint" id="bdHint"></span>
+    </div>
+    <div class="bd-grid">
+      <div class="bd out">
+        <h3>รายจ่าย</h3>
+        <div class="bars" id="barsOut"></div>
+      </div>
+      <div class="bd in">
+        <h3>รายรับ</h3>
+        <div class="bars" id="barsIn"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="tools">
+    <button class="btn ghost sm" id="manageCats">จัดการหมวดหมู่</button>
+    <button class="btn ghost sm" id="exportCsv">ดาวน์โหลด CSV</button>
+    <button class="btn ghost sm" id="backupJson">สำรองข้อมูล (JSON)</button>
+    <button class="btn ghost sm" id="importJson">นำเข้าข้อมูล</button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+    <span class="spacer"></span>
+    <button class="btn ghost sm" id="clearAll">ล้างข้อมูลทั้งหมด</button>
+  </div>
+
+  <p class="foot" id="footNote"></p>
+</div>
+
+<dialog id="catDlg">
+  <div class="dlg-head">
+    <h2>หมวดหมู่</h2>
+    <button class="iconbtn" id="catClose" aria-label="ปิด">✕</button>
+  </div>
+  <div class="dlg-body">
+    <div class="catlist" id="catList"></div>
+    <div class="addcat">
+      <input type="text" id="newCatName" placeholder="ชื่อหมวดใหม่" autocomplete="off">
+      <select id="newCatType">
+        <option value="expense">รายจ่าย</option>
+        <option value="income">รายรับ</option>
+      </select>
+      <button class="btn sm" id="addCatBtn">เพิ่ม</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="confirmDlg">
+  <div class="dlg-head"><h2 id="cfTitle">ยืนยัน</h2></div>
+  <div class="dlg-body"><p id="cfBody" style="margin:0;color:var(--ink-2)"></p></div>
+  <div class="dlg-foot">
+    <button class="btn ghost sm" id="cfNo">ยกเลิก</button>
+    <button class="btn sm" id="cfYes">ยืนยัน</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span id="toastMsg"></span>
+  <button id="toastAct" hidden>เลิกทำ</button>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ============ state ============ */
+const KEY = "ledger-th-v1";
+const DEFAULT_CATS = [
+  ["อาหาร/เครื่องดื่ม","expense"],["เดินทาง","expense"],["ที่พัก/บ้าน","expense"],
+  ["ของใช้ในบ้าน","expense"],["ช้อปปิ้ง","expense"],["สุขภาพ","expense"],
+  ["น้ำ/ไฟ/เน็ต","expense"],["ต้นทุนสินค้า","expense"],["ค่าจ้าง/เงินเดือนพนักงาน","expense"],
+  ["การตลาด","expense"],["ภาษี/ค่าธรรมเนียม","expense"],["อื่น ๆ","expense"],
+  ["เงินเดือน","income"],["ขายสินค้า","income"],["ค่าบริการ","income"],
+  ["ดอกเบี้ย/ปันผล","income"],["รายได้เสริม","income"],["อื่น ๆ","income"]
+];
+const freshState = () => ({
+  v: 1,
+  updatedAt: 0,
+  cats: DEFAULT_CATS.map(([name, type], i) => ({ id: "c" + i, name, type })),
+  tx: []
+});
+let state = freshState();
+let editingId = null;
+let undoTimer = null;
+let deferredInstall = null;
+
+/* ============ helpers ============ */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const fmt = (n) => new Intl.NumberFormat("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+const fmt0 = (n) => new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(n);
+function todayISO() {
+  const d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+function thDate(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const MON = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+  return d + " " + MON[m - 1] + " " + String((y + 543) % 100).padStart(2, "0");
+}
+function thMonth(ym) {
+  const [y, m] = ym.split("-").map(Number);
+  const MON = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+  return MON[m - 1] + " " + (y + 543);
+}
+
+/* ============ calculator ============ */
+function evalExpr(raw) {
+  if (raw == null) return null;
+  let s = String(raw).trim();
+  if (!s) return null;
+  s = s.replace(/[×xX✕*]/g, "*").replace(/[÷]/g, "/").replace(/[−–—]/g, "-")
+       .replace(/,/g, "").replace(/\s+/g, "");
+  s = s.replace(/(\d+(?:\.\d+)?)%/g, "($1/100)");
+  if (!/^[0-9+\-*/().]+$/.test(s)) return null;
+  if (/[+\-*/]$/.test(s)) return null;
+  try {
+    const v = Function('"use strict";return(' + s + ")")();
+    if (typeof v !== "number" || !isFinite(v)) return null;
+    return Math.round(v * 100) / 100;
+  } catch (e) { return null; }
+}
+
+/* ============ persistence (localStorage) ============ */
+let storageOK = true;
+function readLocal() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return null;
+    const o = JSON.parse(raw);
+    return (o && Array.isArray(o.tx) && Array.isArray(o.cats)) ? o : null;
+  } catch (e) { return null; }
+}
+function chip(text, st) {
+  const c = $("saveChip");
+  c.textContent = text;
+  c.dataset.state = st;
+}
+function touch() {
+  state.updatedAt = Date.now();
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state));
+    storageOK = true;
+    chip("บันทึกแล้ว", "saved");
+  } catch (e) {
+    storageOK = false;
+    chip("บันทึกไม่ได้", "local");
+    toast("บันทึกไม่สำเร็จ — พื้นที่เก็บข้อมูลของเบราว์เซอร์เต็มหรือถูกปิดอยู่");
+  }
+  renderFoot();
+}
+function boot() {
+  const local = readLocal();
+  if (local) state = local;
+  render();
+  chip(local ? "บันทึกแล้ว" : "พร้อมใช้งาน", local ? "saved" : "idle");
+}
+
+/* ============ derived ============ */
+function periodKey() { return $("periodSel").value || "all"; }
+function inPeriod(t) {
+  const p = periodKey();
+  return p === "all" ? true : t.date.slice(0, 7) === p;
+}
+function catName(id) {
+  const c = state.cats.find((c) => c.id === id);
+  return c ? c.name : "ไม่ระบุ";
+}
+function visibleTx() {
+  const q = ($("q").value || "").trim().toLowerCase();
+  const ft = $("filterType").value;
+  return state.tx.filter((t) => {
+    if (!inPeriod(t)) return false;
+    if (ft !== "all" && t.type !== ft) return false;
+    if (q) {
+      const hay = (t.name + " " + catName(t.cat)).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+/* ============ render ============ */
+function renderPeriods() {
+  const sel = $("periodSel");
+  const prev = sel.value;
+  const months = [...new Set(state.tx.map((t) => t.date.slice(0, 7)))].sort().reverse();
+  const cur = todayISO().slice(0, 7);
+  if (!months.includes(cur)) months.unshift(cur);
+  sel.innerHTML = '<option value="all">ทุกช่วงเวลา</option>' +
+    months.map((m) => `<option value="${m}">${esc(thMonth(m))}</option>`).join("");
+  sel.value = (prev && [...sel.options].some((o) => o.value === prev)) ? prev : cur;
+}
+function renderCatSelect() {
+  const type = document.querySelector('input[name="ttype"]:checked').value;
+  const sel = $("txCat");
+  const prev = sel.value;
+  const list = state.cats.filter((c) => c.type === type);
+  sel.innerHTML = list.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("") ||
+    '<option value="">— ยังไม่มีหมวด —</option>';
+  if (list.some((c) => c.id === prev)) sel.value = prev;
+}
+function renderTiles() {
+  const rows = state.tx.filter(inPeriod);
+  const inc = rows.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const exp = rows.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const net = inc - exp;
+  const p = periodKey();
+  const label = p === "all" ? "ทุกช่วงเวลา" : thMonth(p);
+  $("tiles").innerHTML = `
+    <div class="tile in"><span class="k">รายรับ</span><span class="v num">${fmt(inc)}</span><span class="m">${esc(label)}</span></div>
+    <div class="tile out"><span class="k">รายจ่าย</span><span class="v num">${fmt(exp)}</span><span class="m">${esc(label)}</span></div>
+    <div class="tile net"><span class="k">คงเหลือ</span><span class="v num${net < 0 ? " neg" : ""}">${fmt(net)}</span><span class="m">${rows.length} รายการ</span></div>`;
+}
+function renderTable() {
+  const rows = visibleTx();
+  const chrono = [...rows].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : (a.seq || 0) - (b.seq || 0));
+  const run = new Map();
+  let acc = 0;
+  for (const t of chrono) { acc += t.type === "income" ? t.amount : -t.amount; run.set(t.id, acc); }
+  const view = [...chrono].reverse();
+
+  $("empty").hidden = view.length > 0;
+  $("tbl").style.display = view.length ? "" : "none";
+
+  $("tbody").innerHTML = view.map((t) => {
+    const isIn = t.type === "income";
+    const r = run.get(t.id);
+    return `<tr data-id="${t.id}">
+      <td class="date">${esc(thDate(t.date))}</td>
+      <td class="name">${esc(t.name)}${t.expr ? `<div style="font-size:11.5px;color:var(--ink-3);font-family:'IBM Plex Mono',monospace">${esc(t.expr)}</div>` : ""}</td>
+      <td><span class="tag ${isIn ? "in" : "out"}">${esc(catName(t.cat))}</span></td>
+      <td class="r money in">${isIn ? fmt(t.amount) : ""}</td>
+      <td class="r money out">${isIn ? "" : fmt(t.amount)}</td>
+      <td class="r money run${r < 0 ? " neg" : ""}">${fmt(r)}</td>
+      <td><div class="rowacts">
+        <button class="iconbtn" data-act="edit" title="แก้ไข" aria-label="แก้ไข">✎</button>
+        <button class="iconbtn" data-act="del" title="ลบ" aria-label="ลบ">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join("");
+
+  const inc = rows.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const exp = rows.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  $("tfoot").innerHTML = view.length ? `<tr>
+    <td colspan="3" class="lab">รวม ${view.length} รายการ</td>
+    <td class="r money in">${fmt(inc)}</td>
+    <td class="r money out">${fmt(exp)}</td>
+    <td class="r money${inc - exp < 0 ? " out" : ""}">${fmt(inc - exp)}</td>
+    <td></td></tr>` : "";
+}
+function renderBars() {
+  const rows = state.tx.filter(inPeriod);
+  const build = (type, el) => {
+    const m = new Map();
+    rows.filter((t) => t.type === type).forEach((t) => m.set(t.cat, (m.get(t.cat) || 0) + t.amount));
+    const arr = [...m.entries()].sort((a, b) => b[1] - a[1]);
+    const total = arr.reduce((s, x) => s + x[1], 0);
+    if (!arr.length) { $(el).innerHTML = '<p class="none">ยังไม่มีข้อมูล</p>'; return; }
+    const max = arr[0][1];
+    $(el).innerHTML = arr.map(([cid, v]) => {
+      const pct = total ? Math.round(v / total * 100) : 0;
+      return `<div class="bar-row" title="${esc(catName(cid))} · ${fmt(v)} บาท (${pct}%)">
+        <span class="bl">${esc(catName(cid))}</span>
+        <span><span class="bv">${fmt0(v)}</span> <span class="bp">${pct}%</span></span>
+        <div class="track"><div class="fill" style="width:${max ? (v / max * 100).toFixed(1) : 0}%"></div></div>
+      </div>`;
+    }).join("");
+  };
+  build("expense", "barsOut");
+  build("income", "barsIn");
+  const p = periodKey();
+  $("bdHint").textContent = p === "all" ? "ทุกช่วงเวลา" : thMonth(p);
+}
+function renderFoot() {
+  const msg = storageOK
+    ? "ข้อมูลเก็บอยู่ในเครื่องนี้เท่านั้น ไม่ถูกส่งไปที่ไหน — ถ้าจะย้ายไปเครื่องอื่นให้กด “สำรองข้อมูล (JSON)” แล้วไปกด “นำเข้าข้อมูล” ที่เครื่องปลายทาง"
+    : "ตอนนี้บันทึกไม่ได้ ลองปิดโหมดไม่ระบุตัวตนหรืออนุญาตให้เว็บนี้เก็บข้อมูล";
+  $("footNote").innerHTML = esc(msg) + "<br>ช่องจำนวนเงินคิดเลขได้ในตัว: <code>85*3</code> = 255 · <code>(1200+300)/2</code> = 750 · <code>1200*7%</code> = 84 · ปุ่ม <code>+ VAT 7%</code> คูณ 1.07 ให้อัตโนมัติ";
+}
+function render() {
+  renderPeriods();
+  renderCatSelect();
+  renderTiles();
+  renderTable();
+  renderBars();
+  renderFoot();
+}
+
+/* ============ toast ============ */
+function toast(msg, actLabel, onAct) {
+  const t = $("toast"), b = $("toastAct");
+  $("toastMsg").textContent = msg;
+  if (actLabel) { b.hidden = false; b.textContent = actLabel; b.onclick = () => { hideToast(); onAct(); }; }
+  else b.hidden = true;
+  t.classList.add("show");
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideToast, 6000);
+}
+function hideToast() { $("toast").classList.remove("show"); }
+
+/* ============ confirm ============ */
+function confirmDlg(title, body, onYes) {
+  $("cfTitle").textContent = title;
+  $("cfBody").textContent = body;
+  const d = $("confirmDlg");
+  $("cfYes").onclick = () => { d.close(); onYes(); };
+  $("cfNo").onclick = () => d.close();
+  d.showModal();
+}
+
+/* ============ entry form ============ */
+function updateEq() {
+  const raw = $("txAmt").value;
+  const el = $("txEq");
+  if (!raw.trim()) { el.textContent = ""; el.className = "amt-eq"; return; }
+  if (/^[\d.,\s]+$/.test(raw)) { el.textContent = ""; el.className = "amt-eq"; return; }
+  const v = evalExpr(raw);
+  if (v == null) { el.textContent = "?"; el.className = "amt-eq bad"; }
+  else { el.textContent = "= " + fmt(v); el.className = "amt-eq ok"; }
+}
+function resetForm() {
+  editingId = null;
+  $("txName").value = "";
+  $("txAmt").value = "";
+  $("txDate").value = todayISO();
+  $("saveBtn").textContent = "บันทึกรายการ";
+  $("cancelEdit").hidden = true;
+  updateEq();
+}
+function submitEntry() {
+  const name = $("txName").value.trim();
+  const amount = evalExpr($("txAmt").value);
+  const date = $("txDate").value || todayISO();
+  const cat = $("txCat").value;
+  const type = document.querySelector('input[name="ttype"]:checked').value;
+
+  if (amount == null || amount <= 0) {
+    toast("ใส่จำนวนเงินให้ถูกต้องก่อน เช่น 120 หรือ 85*3");
+    $("txAmt").focus(); return;
+  }
+  if (!cat) { toast("เพิ่มหมวดหมู่ก่อนบันทึกรายการ"); return; }
+
+  const raw = $("txAmt").value.trim();
+  const expr = /^[\d.,\s]+$/.test(raw) ? "" : raw;
+
+  if (editingId) {
+    const t = state.tx.find((x) => x.id === editingId);
+    if (t) Object.assign(t, { name: name || catName(cat), amount, date, cat, type, expr });
+  } else {
+    state.tx.push({ id: uid(), seq: Date.now(), name: name || catName(cat), amount, date, cat, type, expr });
+  }
+  touch();
+  const was = editingId;
+  resetForm();
+  render();
+  toast(was ? "แก้ไขรายการแล้ว" : "บันทึก " + fmt(amount) + " บาทแล้ว");
+  $("txName").focus();
+}
+function startEdit(id) {
+  const t = state.tx.find((x) => x.id === id);
+  if (!t) return;
+  editingId = id;
+  document.querySelector(`input[name="ttype"][value="${t.type}"]`).checked = true;
+  renderCatSelect();
+  $("txCat").value = t.cat;
+  $("txDate").value = t.date;
+  $("txName").value = t.name;
+  $("txAmt").value = t.expr || String(t.amount);
+  $("saveBtn").textContent = "อัปเดตรายการ";
+  $("cancelEdit").hidden = false;
+  updateEq();
+  $("txName").focus();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function removeTx(id) {
+  const i = state.tx.findIndex((x) => x.id === id);
+  if (i < 0) return;
+  const [gone] = state.tx.splice(i, 1);
+  if (editingId === id) resetForm();
+  touch(); render();
+  toast("ลบ “" + gone.name + "” แล้ว", "เลิกทำ", () => {
+    state.tx.splice(i, 0, gone); touch(); render();
+  });
+}
+
+/* ============ categories ============ */
+function renderCatDlg() {
+  const groups = [["expense", "รายจ่าย"], ["income", "รายรับ"]];
+  $("catList").innerHTML = groups.map(([type, label]) => {
+    const list = state.cats.filter((c) => c.type === type);
+    return `<div class="catgroup">${label}</div>` + (list.length ? list.map((c) => {
+      const used = state.tx.filter((t) => t.cat === c.id).length;
+      return `<div class="ci" data-id="${c.id}">
+        <span class="nm">${esc(c.name)}</span>
+        <span style="font-size:12px;color:var(--ink-3)">${used ? used + " รายการ" : ""}</span>
+        <button class="iconbtn" data-act="delcat" title="ลบหมวดนี้" aria-label="ลบ ${esc(c.name)}">✕</button>
+      </div>`;
+    }).join("") : '<p class="none" style="font-size:13px;color:var(--ink-3);padding:2px 8px">— ไม่มี —</p>');
+  }).join("");
+}
+
+/* ============ export ============ */
+function offerFile(filename, text) {
+  try {
+    const url = URL.createObjectURL(new Blob([text], { type: "application/octet-stream" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast("ดาวน์โหลดไฟล์แล้ว");
+  } catch (e) { toast("ดาวน์โหลดไม่ได้ในเบราว์เซอร์นี้"); }
+}
+function importFile(file) {
+  const fr = new FileReader();
+  fr.onload = () => {
+    let o = null;
+    try { o = JSON.parse(fr.result); } catch (e) {}
+    if (!o || !Array.isArray(o.tx) || !Array.isArray(o.cats)) { toast("ไฟล์ไม่ถูกต้อง ต้องเป็นไฟล์สำรองที่ดาวน์โหลดจากแอปนี้"); return; }
+    confirmDlg("นำเข้าข้อมูล?", "รายการปัจจุบัน " + state.tx.length + " รายการจะถูกแทนที่ด้วย " + o.tx.length + " รายการจากไฟล์", () => {
+      state = { v: 1, updatedAt: Date.now(), cats: o.cats, tx: o.tx };
+      resetForm(); touch(); render(); toast("นำเข้าข้อมูลแล้ว");
+    });
+  };
+  fr.onerror = () => toast("อ่านไฟล์ไม่สำเร็จ");
+  fr.readAsText(file);
+}
+function csvCell(v) {
+  const s = String(v ?? "");
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function exportCsv() {
+  const rows = visibleTx().sort((a, b) => a.date < b.date ? -1 : 1);
+  if (!rows.length) { toast("ไม่มีรายการให้ส่งออกในช่วงนี้"); return; }
+  const head = ["วันที่", "รายการ", "หมวดหมู่", "ประเภท", "รายรับ", "รายจ่าย", "สูตรที่กรอก"];
+  const body = rows.map((t) => [
+    t.date, t.name, catName(t.cat), t.type === "income" ? "รายรับ" : "รายจ่าย",
+    t.type === "income" ? t.amount.toFixed(2) : "",
+    t.type === "expense" ? t.amount.toFixed(2) : "",
+    t.expr || ""
+  ]);
+  const inc = rows.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const exp = rows.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  body.push([], ["", "รวม", "", "", inc.toFixed(2), exp.toFixed(2), ""], ["", "คงเหลือ", "", "", (inc - exp).toFixed(2), "", ""]);
+  const csv = "﻿" + [head, ...body].map((r) => r.map(csvCell).join(",")).join("\r\n");
+  const p = periodKey();
+  offerFile("รายรับรายจ่าย-" + (p === "all" ? "ทั้งหมด" : p) + ".csv", csv);
+}
+
+/* ============ events ============ */
+$("txDate").value = todayISO();
+$("txAmt").addEventListener("input", updateEq);
+$("txAmt").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitEntry(); } });
+$("txName").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("txAmt").focus(); } });
+$("saveBtn").addEventListener("click", submitEntry);
+$("cancelEdit").addEventListener("click", () => { resetForm(); });
+document.querySelectorAll('input[name="ttype"]').forEach((r) =>
+  r.addEventListener("change", renderCatSelect));
+
+$("keys").addEventListener("click", (e) => {
+  const b = e.target.closest(".key"); if (!b) return;
+  const k = b.dataset.k, el = $("txAmt");
+  if (k === "clear") el.value = "";
+  else if (k === "*1.07" || k === "/1.07") {
+    const cur = el.value.trim();
+    if (!cur) return;
+    el.value = "(" + cur + ")" + k;
+  } else el.value += k;
+  updateEq(); el.focus();
+});
+
+$("tbody").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-act]"); if (!btn) return;
+  const id = btn.closest("tr").dataset.id;
+  if (btn.dataset.act === "edit") startEdit(id);
+  else removeTx(id);
+});
+
+$("periodSel").addEventListener("change", () => { renderTiles(); renderTable(); renderBars(); });
+$("q").addEventListener("input", renderTable);
+$("filterType").addEventListener("change", renderTable);
+
+$("manageCats").addEventListener("click", () => { renderCatDlg(); $("catDlg").showModal(); });
+$("catClose").addEventListener("click", () => $("catDlg").close());
+$("addCatBtn").addEventListener("click", () => {
+  const name = $("newCatName").value.trim();
+  const type = $("newCatType").value;
+  if (!name) { $("newCatName").focus(); return; }
+  if (state.cats.some((c) => c.name === name && c.type === type)) { toast("มีหมวดนี้อยู่แล้ว"); return; }
+  state.cats.push({ id: uid(), name, type });
+  $("newCatName").value = "";
+  touch(); renderCatDlg(); renderCatSelect();
+});
+$("newCatName").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("addCatBtn").click(); } });
+$("catList").addEventListener("click", (e) => {
+  const b = e.target.closest('button[data-act="delcat"]'); if (!b) return;
+  const id = b.closest(".ci").dataset.id;
+  const used = state.tx.filter((t) => t.cat === id).length;
+  if (used) { toast("ลบไม่ได้ มี " + used + " รายการใช้หมวดนี้อยู่"); return; }
+  state.cats = state.cats.filter((c) => c.id !== id);
+  touch(); renderCatDlg(); renderCatSelect();
+});
+
+$("exportCsv").addEventListener("click", exportCsv);
+$("backupJson").addEventListener("click", () => offerFile("ledger-backup.json", JSON.stringify(state, null, 2)));
+$("clearAll").addEventListener("click", () => {
+  confirmDlg("ล้างข้อมูลทั้งหมด?", "รายการทั้งหมด " + state.tx.length + " รายการจะถูกลบถาวร หมวดหมู่จะกลับเป็นค่าเริ่มต้น ควรดาวน์โหลดไฟล์สำรองก่อน", () => {
+    state = freshState(); resetForm(); touch(); render(); toast("ล้างข้อมูลแล้ว");
+  });
+});
+
+$("importJson").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (f) importFile(f);
+  e.target.value = "";
+});
+
+/* ---- install as app ---- */
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstall = e;
+  $("installBtn").hidden = false;
+});
+$("installBtn").addEventListener("click", async () => {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  await deferredInstall.userChoice;
+  deferredInstall = null;
+  $("installBtn").hidden = true;
+});
+window.addEventListener("appinstalled", () => { $("installBtn").hidden = true; });
+
+/* ---- offline support ---- */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+
+boot();
+})();
+</script>
+</body>
+</html>
