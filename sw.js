@@ -1,5 +1,11 @@
-/* สมุดรายรับ–รายจ่าย — service worker (offline-first) */
-const CACHE = "money-book-v4";
+/* สมุดรายรับ–รายจ่าย — service worker
+ *
+ * เวลาจะปล่อยเวอร์ชันใหม่: แก้ VERSION บรรทัดล่างนี้บรรทัดเดียวพอ
+ * แอปที่ติดตั้งไว้จะเห็นแถบ "มีเวอร์ชันใหม่" ขึ้นมาเอง
+ */
+const VERSION = "2026.08.27";
+const CACHE = "money-book-" + VERSION;
+
 const ASSETS = [
   "./",
   "./index.html",
@@ -10,12 +16,14 @@ const ASSETS = [
   "./icons/maskable-512.png"
 ];
 
+/* ---- install: เตรียมแคชของเวอร์ชันใหม่ไว้เงียบ ๆ ----
+   ไม่เรียก skipWaiting() ตรงนี้ เพราะจะทำให้หน้าที่เปิดค้างอยู่โดนสลับ
+   ไฟล์ใต้เท้ากลางคัน — รอให้หน้าเว็บสั่งมาเองว่าพร้อมอัปเดตแล้ว */
 self.addEventListener("install", (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting())
-  );
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
 });
 
+/* ---- activate: ลบแคชเวอร์ชันเก่าทิ้ง แล้วเข้าคุมทุกหน้าที่เปิดอยู่ ---- */
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys()
@@ -24,12 +32,22 @@ self.addEventListener("activate", (e) => {
   );
 });
 
+/* ---- ข้อความจากหน้าเว็บ ---- */
+self.addEventListener("message", (e) => {
+  const data = e.data || {};
+  if (data === "SKIP_WAITING" || data.type === "SKIP_WAITING") {
+    self.skipWaiting();                       // ผู้ใช้กด "อัปเดตเลย"
+  } else if (data.type === "VERSION" && e.ports && e.ports[0]) {
+    e.ports[0].postMessage(VERSION);          // หน้าเว็บถามว่าตอนนี้รันเวอร์ชันอะไร
+  }
+});
+
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
-  // Navigations: network first, fall back to the cached shell when offline.
+  // เปิดหน้าเว็บ: เอาของใหม่จากเน็ตก่อนเสมอ ถ้าไม่มีเน็ตค่อยใช้ของในแคช
   if (req.mode === "navigate") {
     e.respondWith(
       fetch(req)
@@ -43,7 +61,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Same-origin assets: cache first.
+  // ไฟล์ของเราเอง: ใช้ของในแคชก่อนเพื่อความเร็ว
   if (url.origin === location.origin) {
     e.respondWith(
       caches.match(req).then((hit) => hit || fetch(req).then((res) => {
@@ -55,7 +73,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Cross-origin (Google Fonts): stale-while-revalidate.
+  // ฟอนต์จาก Google: ใช้ของในแคชไปก่อน แล้วค่อยอัปเดตเบื้องหลัง
   e.respondWith(
     caches.match(req).then((hit) => {
       const net = fetch(req).then((res) => {

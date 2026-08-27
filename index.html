@@ -344,6 +344,26 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
 .addcat select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 8px;font-size:13.5px}
 
 /* ---------- toast ---------- */
+.updatebar{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;
+  display:flex;align-items:center;gap:10px;max-width:calc(100% - 24px);
+  background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);
+  border-radius:999px;padding:8px 8px 8px 16px;font-size:14px;
+  box-shadow:0 14px 36px -12px rgba(0,0,0,.4);
+  animation:ubIn .3s cubic-bezier(.4,0,.2,1);
+}
+.updatebar[hidden]{display:none}
+@keyframes ubIn{from{opacity:0;transform:translate(-50%,140%)}to{opacity:1;transform:translate(-50%,0)}}
+.ub-dot{width:8px;height:8px;border-radius:50%;background:var(--income);flex:none;
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--income) 22%, transparent)}
+.ub-msg{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ub-go{border:none;background:var(--accent);color:var(--accent-ink);border-radius:999px;
+  padding:7px 16px;font-weight:600;font-size:13.5px;white-space:nowrap}
+.ub-go:hover{filter:brightness(1.08)}
+.ub-later{border:none;background:transparent;color:var(--ink-3);font-size:13px;padding:7px 10px;white-space:nowrap}
+.ub-later:hover{color:var(--ink)}
+@media (max-width:480px){.ub-later{display:none}.updatebar{font-size:13.5px;padding-left:13px}}
+
 .toast{
   position:fixed;left:50%;bottom:22px;transform:translate(-50%,140%);
   background:var(--ink);color:var(--ground);border-radius:10px;padding:10px 12px 10px 16px;
@@ -525,6 +545,13 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
   </div>
 </dialog>
 
+<div class="updatebar" id="updateBar" role="status" aria-live="polite" hidden>
+  <span class="ub-dot" aria-hidden="true"></span>
+  <span class="ub-msg">มีเวอร์ชันใหม่พร้อมใช้งาน</span>
+  <button class="ub-go" id="ubGo">อัปเดตเลย</button>
+  <button class="ub-later" id="ubLater" aria-label="ปิด">ภายหลัง</button>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite">
   <span id="toastMsg"></span>
   <button id="toastAct" hidden>เลิกทำ</button>
@@ -554,6 +581,7 @@ let state = freshState();
 let editingId = null;
 let undoTimer = null;
 let deferredInstall = null;
+let swVersion = "";
 
 /* ============ helpers ============ */
 const $ = (id) => document.getElementById(id);
@@ -907,7 +935,8 @@ function renderFoot() {
   const msg = storageOK
     ? "ข้อมูลเก็บอยู่ในเครื่องนี้เท่านั้น ไม่ถูกส่งไปที่ไหน — ถ้าจะย้ายไปเครื่องอื่นให้กด “สำรองข้อมูล (JSON)” แล้วไปกด “นำเข้าข้อมูล” ที่เครื่องปลายทาง"
     : "ตอนนี้บันทึกไม่ได้ ลองปิดโหมดไม่ระบุตัวตนหรืออนุญาตให้เว็บนี้เก็บข้อมูล";
-  $("footNote").innerHTML = esc(msg) + "<br>ช่องจำนวนเงินคิดเลขได้ในตัว: <code>85*3</code> = 255 · <code>(1200+300)/2</code> = 750 · <code>1200*7%</code> = 84 · ปุ่ม <code>+ VAT 7%</code> คูณ 1.07 ให้อัตโนมัติ";
+  const ver = swVersion ? ' · เวอร์ชัน <code>' + esc(swVersion) + "</code>" : "";
+  $("footNote").innerHTML = esc(msg) + "<br>ช่องจำนวนเงินคิดเลขได้ในตัว: <code>85*3</code> = 255 · <code>(1200+300)/2</code> = 750 · <code>1200*7%</code> = 84 · ปุ่ม <code>+ VAT 7%</code> คูณ 1.07 ให้อัตโนมัติ" + ver;
 }
 function render() {
   renderPeriods();
@@ -1164,10 +1193,60 @@ $("installBtn").addEventListener("click", async () => {
 });
 window.addEventListener("appinstalled", () => { $("installBtn").hidden = true; });
 
-/* ---- offline support ---- */
+/* ---- offline support + auto update ----
+   เปิดแอปทีไรจะเช็กเวอร์ชันใหม่ให้เสมอ ถ้าเจอระหว่างที่เปิดค้างอยู่
+   จะขึ้นแถบถามก่อน ไม่รีเฟรชทับตอนกำลังกรอกข้อมูล */
+let hadController = false, wantReload = false, reloading = false;
+function doReload() {
+  if (reloading) return;
+  reloading = true;
+  location.reload();
+}
+function showUpdateBar(worker) {
+  const bar = $("updateBar");
+  if (!bar || bar.dataset.armed === "1") return;
+  bar.dataset.armed = "1";
+  bar.hidden = false;
+  $("ubGo").onclick = () => {
+    $("ubGo").textContent = "กำลังอัปเดต…";
+    $("ubGo").disabled = true;
+    wantReload = true;
+    worker.postMessage({ type: "SKIP_WAITING" });  // สลับไปเวอร์ชันใหม่ แล้วหน้าจะรีโหลดเอง
+    setTimeout(doReload, 3000);                    // เผื่อ controllerchange ไม่มา
+  };
+  $("ubLater").onclick = () => { bar.hidden = true; };
+}
+function askVersion() {
+  const sw = navigator.serviceWorker.controller;
+  if (!sw) return;
+  const ch = new MessageChannel();
+  ch.port1.onmessage = (e) => { swVersion = e.data || ""; renderFoot(); };
+  sw.postMessage({ type: "VERSION" }, [ch.port2]);
+}
 if ("serviceWorker" in navigator) {
+  hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    // ติดตั้งครั้งแรกแค่เข้าคุมหน้าเฉย ๆ ไม่ต้องรีโหลด
+    if (wantReload || hadController) doReload(); else askVersion();
+  });
+  navigator.serviceWorker.ready.then(() => askVersion()).catch(() => {});
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then((reg) => {
+      askVersion();
+      if (reg.waiting && navigator.serviceWorker.controller) showUpdateBar(reg.waiting);
+      reg.addEventListener("updatefound", () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener("statechange", () => {
+          if (nw.state === "installed" && navigator.serviceWorker.controller) showUpdateBar(nw);
+        });
+      });
+      const check = () => { reg.update().catch(() => {}); };
+      check();
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) check(); });
+      window.addEventListener("online", check);
+      setInterval(check, 30 * 60 * 1000);
+    }).catch(() => {});
   });
 }
 
