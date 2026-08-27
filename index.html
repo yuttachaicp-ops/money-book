@@ -423,6 +423,35 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
 
   <section class="card">
     <div class="card-head">
+      <h2>แนวโน้มรายเดือน</h2>
+      <div class="key">
+        <span class="key-item"><i class="sw in"></i>รายรับ</span>
+        <span class="key-item"><i class="sw out"></i>รายจ่าย</span>
+        <span class="key-item net-key"><i class="sw net"></i>คงเหลือรายเดือน</span>
+      </div>
+    </div>
+    <div class="chart-pad">
+      <div class="trend" id="trend"></div>
+      <p class="chart-note" id="trendNote"></p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>สัดส่วนตามหมวดหมู่</h2>
+      <div class="head-right">
+        <div class="seg tiny" role="radiogroup" aria-label="ประเภทที่แสดงในกราฟวงกลม">
+          <label><input type="radio" name="dtype" value="expense" checked><span>รายจ่าย</span></label>
+          <label><input type="radio" name="dtype" value="income"><span>รายรับ</span></label>
+        </div>
+        <span class="hint" id="bdHint"></span>
+      </div>
+    </div>
+    <div class="donut-wrap" id="donutWrap"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
       <h2>ตารางรายการ</h2>
       <div class="toolbar">
         <input type="search" id="q" placeholder="ค้นหารายการ / หมวดหมู่" aria-label="ค้นหา">
@@ -454,35 +483,6 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
       <strong>ยังไม่มีรายการในช่วงนี้</strong>
       <span>กรอกแบบฟอร์มด้านบนเพื่อเริ่มบันทึกรายการแรก</span>
     </div>
-  </section>
-
-  <section class="card">
-    <div class="card-head">
-      <h2>แนวโน้มรายเดือน</h2>
-      <div class="key">
-        <span class="key-item"><i class="sw in"></i>รายรับ</span>
-        <span class="key-item"><i class="sw out"></i>รายจ่าย</span>
-        <span class="key-item net-key"><i class="sw net"></i>คงเหลือรายเดือน</span>
-      </div>
-    </div>
-    <div class="chart-pad">
-      <div class="trend" id="trend"></div>
-      <p class="chart-note" id="trendNote"></p>
-    </div>
-  </section>
-
-  <section class="card">
-    <div class="card-head">
-      <h2>สัดส่วนตามหมวดหมู่</h2>
-      <div class="head-right">
-        <div class="seg tiny" role="radiogroup" aria-label="ประเภทที่แสดงในกราฟวงกลม">
-          <label><input type="radio" name="dtype" value="expense" checked><span>รายจ่าย</span></label>
-          <label><input type="radio" name="dtype" value="income"><span>รายรับ</span></label>
-        </div>
-        <span class="hint" id="bdHint"></span>
-      </div>
-    </div>
-    <div class="donut-wrap" id="donutWrap"></div>
   </section>
 
   <div class="tools">
