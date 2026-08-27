@@ -3,7 +3,7 @@
  * เวลาจะปล่อยเวอร์ชันใหม่: แก้ VERSION บรรทัดล่างนี้บรรทัดเดียวพอ
  * แอปที่ติดตั้งไว้จะเห็นแถบ "มีเวอร์ชันใหม่" ขึ้นมาเอง
  */
-const VERSION = "2026.08.27";
+const VERSION = "2026.08.27-2";
 const CACHE = "money-book-" + VERSION;
 
 const ASSETS = [
@@ -48,10 +48,20 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
 
   // เปิดหน้าเว็บ: เอาของใหม่จากเน็ตก่อนเสมอ ถ้าไม่มีเน็ตค่อยใช้ของในแคช
+  // cache:"no-cache" บังคับให้ถามเซิร์ฟเวอร์ทุกครั้ง ไม่งั้น GitHub Pages
+  // สั่งให้เบราว์เซอร์เก็บ index.html ไว้ 10 นาที แล้วเวอร์ชันใหม่จะมาช้า
   if (req.mode === "navigate") {
+    const fresh = () => {
+      try {
+        return fetch(req.url, { cache: "no-cache", credentials: "same-origin", redirect: "follow" });
+      } catch (err) {
+        return fetch(req);
+      }
+    };
     e.respondWith(
-      fetch(req)
+      fresh()
         .then((res) => {
+          if (!res || !res.ok) throw new Error("bad response");
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put("./index.html", copy));
           return res;
