@@ -431,6 +431,52 @@ tfoot .lab{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:va
   .imp-head{display:none}
 }
 
+
+/* ---------- goals ---------- */
+.tab{position:relative}
+.tdot{position:absolute;top:6px;right:calc(50% - 26px);width:7px;height:7px;border-radius:50%;
+  background:var(--expense);box-shadow:0 0 0 2px var(--surface)}
+.tdot[hidden]{display:none}
+@media (max-width:700px){.tdot{top:4px;right:calc(50% - 16px)}}
+
+.pace{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--shadow);padding:13px 16px;display:flex;flex-direction:column;gap:8px}
+.pace .pt{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;font-size:13.5px}
+.pace .pt b{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink)}
+.pace .pl{color:var(--ink-3);font-size:12px;letter-spacing:.04em;text-transform:uppercase;font-weight:500}
+.pace .ptrack{height:6px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.pace .pfill{height:100%;border-radius:4px;background:var(--accent);transition:width .4s}
+
+.goalpad{padding:15px 16px 17px;display:flex;flex-direction:column;gap:15px}
+.grow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;align-items:center}
+.gname{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gset{width:104px;background:var(--surface);border:1px solid var(--line);border-radius:7px;
+  padding:6px 9px;font-family:"IBM Plex Mono",monospace;font-size:13px;text-align:right;
+  font-variant-numeric:tabular-nums}
+.gset:hover{border-color:var(--line-strong)}
+.gbar{grid-column:1/-1;position:relative;height:9px;border-radius:5px;background:var(--surface-2);overflow:hidden}
+.gfill{height:100%;border-radius:5px;transition:width .45s cubic-bezier(.4,0,.2,1)}
+.gfill.ok{background:var(--income)}
+.gfill.over{background:var(--expense)}
+.gmark{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);opacity:.45}
+.gmeta{grid-column:1/-1;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  font-size:12px;color:var(--ink-3)}
+.gmeta .gnum{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.gstat{font-weight:500}
+.gstat.ok{color:var(--income)}
+.gstat.fast{color:var(--ink-2)}
+.gstat.over{color:var(--expense)}
+.gnone{font-size:13.5px;color:var(--ink-3);line-height:1.8}
+.gnone b{color:var(--ink-2);font-weight:500}
+.gsave-grid{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.gsave-grid .f{gap:5px}
+.gsave-grid input{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px}
+.gsave-grid input[type="number"]{width:150px;font-family:"IBM Plex Mono",monospace;text-align:right}
+.gbig{display:flex;gap:22px;flex-wrap:wrap;margin-top:4px}
+.gbig div{display:flex;flex-direction:column;gap:1px}
+.gbig .k{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.gbig .v{font-family:"IBM Plex Mono",monospace;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+
 /* ---------- dialog ---------- */
 dialog{
   border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);
@@ -502,6 +548,7 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
   <nav class="tabs" role="tablist" aria-label="หน้าในแอป">
     <a class="tab" href="#/record" data-tab="record" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19.5 8.5a2.5 2.5 0 0 0-3.5-3.5L4.5 16.5 4 20Z"/></svg><span>บันทึก</span></a>
     <a class="tab" href="#/dashboard" data-tab="dashboard" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20.5h18"/><path d="M6.5 17V11"/><path d="M12 17V4.5"/><path d="M17.5 17v-4"/></svg><span>แดชบอร์ด</span></a>
+    <a class="tab" href="#/goals" data-tab="goals" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.6"/><path d="M12 3.5v-2M12 22.5v-2M3.5 12h-2M22.5 12h-2"/></svg><span>เป้าหมาย</span><i class="tdot" id="goalDot" hidden></i></a>
     <a class="tab" href="#/list" data-tab="list" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg><span>รายการ</span></a>
   </nav>
 
@@ -603,6 +650,43 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
     <div class="donut-wrap" id="donutWrap"></div>
   </section>
 
+    </section>
+
+    <section class="page" data-page="goals" hidden>
+      <div class="pace" id="pace"></div>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>เป้าหมายรายเดือน</h2>
+          <span class="hint" id="goalMonth"></span>
+        </div>
+        <div class="goalpad" id="monthGoals"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>งบต่อหมวด</h2>
+          <button class="btn ghost sm" id="autoBudget">ตั้งงบจากค่าเฉลี่ย 3 เดือน</button>
+        </div>
+        <div class="goalpad" id="catGoals"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>เป้าเก็บเงิน</h2></div>
+        <div class="goalpad">
+          <div class="gsave-grid">
+            <div class="f">
+              <label class="flab" for="svTarget">อยากเก็บให้ได้</label>
+              <input type="number" id="svTarget" min="0" step="1000" inputmode="numeric" placeholder="50000">
+            </div>
+            <div class="f">
+              <label class="flab" for="svDeadline">ภายในเดือน</label>
+              <input type="month" id="svDeadline">
+            </div>
+          </div>
+          <div id="svResult"></div>
+        </div>
+      </section>
     </section>
 
     <section class="page" data-page="list" hidden>
@@ -733,12 +817,28 @@ const DEFAULT_CATS = [
   ["เงินเดือน","income"],["ขายสินค้า","income"],["ค่าบริการ","income"],
   ["ดอกเบี้ย/ปันผล","income"],["รายได้เสริม","income"],["อื่น ๆ","income"]
 ];
+const emptyGoals = () => ({
+  income: 0,                                  // เป้ารายรับต่อเดือน
+  cap: 0,                                     // เพดานรายจ่ายรวมต่อเดือน
+  cats: {},                                   // งบต่อหมวด { catId: จำนวน }
+  save: { target: 0, deadline: "", from: "" } // เป้าเก็บเงิน
+});
 const freshState = () => ({
   v: 1,
   updatedAt: 0,
   cats: DEFAULT_CATS.map(([name, type], i) => ({ id: "c" + i, name, type })),
-  tx: []
+  tx: [],
+  goals: emptyGoals()
 });
+function normalizeGoals(o) {
+  const g = Object.assign(emptyGoals(), o && o.goals);
+  g.income = +g.income || 0;
+  g.cap = +g.cap || 0;
+  g.cats = g.cats && typeof g.cats === "object" ? g.cats : {};
+  g.save = Object.assign({ target: 0, deadline: "", from: "" }, g.save);
+  g.save.target = +g.save.target || 0;
+  return g;
+}
 let state = freshState();
 let editingId = null;
 let undoTimer = null;
@@ -790,7 +890,9 @@ function readLocal() {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const o = JSON.parse(raw);
-    return (o && Array.isArray(o.tx) && Array.isArray(o.cats)) ? o : null;
+    if (!o || !Array.isArray(o.tx) || !Array.isArray(o.cats)) return null;
+    o.goals = normalizeGoals(o);
+    return o;
   } catch (e) { return null; }
 }
 function chip(text, st) {
@@ -819,7 +921,7 @@ function boot() {
 }
 
 /* ============ router ============ */
-const PAGES = ["record", "dashboard", "list"];
+const PAGES = ["record", "dashboard", "goals", "list"];
 function currentPage() {
   const h = (location.hash || "").replace(/^#\/?/, "");
   return PAGES.includes(h) ? h : "record";
@@ -1171,7 +1273,208 @@ function render() {
   renderTable();
   renderTrend();
   renderDonut();
+  renderGoals();
   renderFoot();
+}
+
+
+/* ============ goals ============ */
+function monthMeta(ym) {
+  const [y, m] = ym.split("-").map(Number);
+  const days = new Date(y, m, 0).getDate();
+  const today = todayISO();
+  const done = today.slice(0, 7) === ym ? +today.slice(8, 10)
+             : (today.slice(0, 7) > ym ? days : 0);
+  return { days, done, ratio: days ? done / days : 0 };
+}
+function monthTotals(ym) {
+  const rows = state.tx.filter((t) => t.date.slice(0, 7) === ym);
+  const inc = rows.filter((t) => t.type === "income").reduce((a, t) => a + t.amount, 0);
+  const exp = rows.filter((t) => t.type === "expense").reduce((a, t) => a + t.amount, 0);
+  return { inc, exp, net: inc - exp };
+}
+function catSpent(ym, cid) {
+  return state.tx.filter((t) => t.type === "expense" && t.cat === cid && t.date.slice(0, 7) === ym)
+    .reduce((a, t) => a + t.amount, 0);
+}
+/* one bar: spending against a limit, with a marker showing where the month's pace is */
+function limitBar(spent, limit, ratio) {
+  if (!limit) return "";
+  const pct = Math.min(100, (spent / limit) * 100);
+  const over = spent > limit;
+  const fast = !over && spent > limit * ratio;
+  const left = limit - spent;
+  const stat = over ? ["over", "เกินงบ " + fmt0(spent - limit)]
+             : fast ? ["fast", "เร็วกว่าจังหวะ"]
+             : ["ok", "ตามจังหวะ"];
+  return `<div class="gbar">
+      <div class="gfill ${over ? "over" : "ok"}" style="width:${pct.toFixed(1)}%"></div>
+      <div class="gmark" style="left:${(ratio * 100).toFixed(1)}%" title="จังหวะของเดือน"></div>
+    </div>
+    <div class="gmeta">
+      <span class="gstat ${stat[0]}">${esc(stat[1])}</span>
+      <span><span class="gnum">${fmt0(spent)}</span> / ${fmt0(limit)}${
+        over ? "" : ` · เหลือ <span class="gnum">${fmt0(left)}</span>`}</span>
+    </div>`;
+}
+/* a target you want to REACH (income) rather than stay under */
+function targetBar(got, target, ratio) {
+  if (!target) return "";
+  const pct = Math.min(100, (got / target) * 100);
+  const hit = got >= target;
+  const behind = !hit && got < target * ratio;
+  const stat = hit ? ["ok", "ถึงเป้าแล้ว"] : behind ? ["over", "ช้ากว่าจังหวะ"] : ["ok", "ตามจังหวะ"];
+  return `<div class="gbar">
+      <div class="gfill ${hit || !behind ? "ok" : "over"}" style="width:${pct.toFixed(1)}%"></div>
+      <div class="gmark" style="left:${(ratio * 100).toFixed(1)}%" title="จังหวะของเดือน"></div>
+    </div>
+    <div class="gmeta">
+      <span class="gstat ${stat[0]}">${esc(stat[1])}</span>
+      <span><span class="gnum">${fmt0(got)}</span> / ${fmt0(target)}${
+        hit ? "" : ` · ขาดอีก <span class="gnum">${fmt0(target - got)}</span>`}</span>
+    </div>`;
+}
+function overBudgetCats(ym) {
+  const g = state.goals;
+  return Object.keys(g.cats).filter((cid) => g.cats[cid] > 0 && catSpent(ym, cid) > g.cats[cid]);
+}
+function renderGoalDot() {
+  const dot = $("goalDot");
+  if (!dot) return;
+  const ym = todayISO().slice(0, 7);
+  const g = state.goals;
+  const over = overBudgetCats(ym).length > 0 || (g.cap > 0 && monthTotals(ym).exp > g.cap);
+  dot.hidden = !over;
+}
+function renderGoals() {
+  if (!$("pace")) return;
+  const ym = todayISO().slice(0, 7);
+  const mm = monthMeta(ym);
+  const tot = monthTotals(ym);
+  const g = state.goals;
+
+  $("goalMonth").textContent = thMonth(ym);
+  $("pace").innerHTML = `
+    <div class="pt">
+      <span class="pl">จังหวะของเดือน</span>
+      <span>ผ่านไป <b>${mm.done}</b> จาก <b>${mm.days}</b> วัน (<b>${Math.round(mm.ratio * 100)}%</b>)</span>
+    </div>
+    <div class="ptrack"><div class="pfill" style="width:${(mm.ratio * 100).toFixed(1)}%"></div></div>`;
+
+  /* ---- รายเดือน: เป้ารายรับ + เพดานรายจ่าย ---- */
+  if (!$("monthGoals").contains(document.activeElement)) $("monthGoals").innerHTML = `
+    <div class="grow">
+      <span class="gname">เป้ารายรับ / ยอดขาย</span>
+      <input class="gset" type="number" min="0" step="100" inputmode="numeric" data-g="income"
+        value="${g.income || ""}" placeholder="ไม่ตั้ง" aria-label="เป้ารายรับต่อเดือน">
+      ${g.income ? targetBar(tot.inc, g.income, mm.ratio)
+        : `<p class="gmeta">ยังไม่ได้ตั้งเป้า · เดือนนี้รับมาแล้ว <span class="gnum">${fmt0(tot.inc)}</span></p>`}
+    </div>
+    <div class="grow">
+      <span class="gname">เพดานรายจ่ายรวม</span>
+      <input class="gset" type="number" min="0" step="100" inputmode="numeric" data-g="cap"
+        value="${g.cap || ""}" placeholder="ไม่ตั้ง" aria-label="เพดานรายจ่ายต่อเดือน">
+      ${g.cap ? limitBar(tot.exp, g.cap, mm.ratio)
+        : `<p class="gmeta">ยังไม่ได้ตั้งเพดาน · เดือนนี้ใช้ไปแล้ว <span class="gnum">${fmt0(tot.exp)}</span></p>`}
+    </div>`;
+
+  /* ---- งบต่อหมวด ---- */
+  const expCats = state.cats.filter((c) => c.type === "expense");
+  const rows = expCats.map((c) => ({ c, limit: +g.cats[c.id] || 0, spent: catSpent(ym, c.id) }))
+    .filter((r) => r.limit > 0 || r.spent > 0)
+    .sort((a, b) => (b.limit ? 1 : 0) - (a.limit ? 1 : 0) || b.spent - a.spent);
+  if (!$("catGoals").contains(document.activeElement)) $("catGoals").innerHTML = rows.length ? rows.map((r) => `
+    <div class="grow">
+      <span class="gname">${esc(r.c.name)}</span>
+      <input class="gset" type="number" min="0" step="100" inputmode="numeric"
+        data-g="cat" data-cid="${r.c.id}" value="${r.limit || ""}" placeholder="ไม่ตั้ง"
+        aria-label="งบหมวด ${esc(r.c.name)}">
+      ${r.limit ? limitBar(r.spent, r.limit, mm.ratio)
+        : `<p class="gmeta">เดือนนี้ใช้ไป <span class="gnum">${fmt0(r.spent)}</span> — ใส่ตัวเลขเพื่อตั้งงบ</p>`}
+    </div>`).join("")
+    : `<p class="gnone">ยังไม่มีรายจ่ายให้ตั้งงบ<br>บันทึกรายการสักพักแล้วกด <b>ตั้งงบจากค่าเฉลี่ย 3 เดือน</b> แอปจะคำนวณให้เอง</p>`;
+
+  /* ---- เป้าเก็บเงิน ---- */
+  const sv = g.save;
+  const tEl = $("svTarget"), dEl = $("svDeadline");
+  if (tEl && document.activeElement !== tEl) tEl.value = sv.target || "";
+  if (dEl && document.activeElement !== dEl) dEl.value = sv.deadline || "";
+  let body = "";
+  if (sv.target > 0 && sv.deadline) {
+    const from = sv.from || ym;
+    const saved = [...new Set(state.tx.map((t) => t.date.slice(0, 7)))]
+      .filter((m) => m >= from && m <= ym)
+      .reduce((a, m) => a + monthTotals(m).net, 0);
+    const [dy, dm] = sv.deadline.split("-").map(Number);
+    const [cy, cm] = ym.split("-").map(Number);
+    const monthsLeft = Math.max(0, (dy - cy) * 12 + (dm - cm) + 1);
+    const remain = Math.max(0, sv.target - saved);
+    const need = monthsLeft > 0 ? remain / monthsLeft : remain;
+    const pct = Math.min(100, Math.max(0, (saved / sv.target) * 100));
+    const done = saved >= sv.target;
+    body = `<div class="grow">
+      <span class="gname">เก็บได้แล้ว ${Math.round(pct)}%</span>
+      <span></span>
+      <div class="gbar"><div class="gfill ${done || monthsLeft > 0 ? "ok" : "over"}" style="width:${pct.toFixed(1)}%"></div></div>
+    </div>
+    <div class="gbig">
+      <div><span class="k">เก็บได้แล้ว</span><span class="v" style="color:var(--income)">${fmt0(Math.max(0, saved))}</span></div>
+      <div><span class="k">ขาดอีก</span><span class="v">${fmt0(remain)}</span></div>
+      <div><span class="k">เหลืออีก</span><span class="v">${monthsLeft} เดือน</span></div>
+      <div><span class="k">ต้องเก็บเดือนละ</span><span class="v">${done ? "—" : fmt0(Math.ceil(need))}</span></div>
+    </div>
+    <p class="gnone" style="margin:0">${done ? "ถึงเป้าแล้ว 🎉"
+      : monthsLeft === 0 ? "เลยกำหนดแล้ว — ปรับเดือนเป้าหมายใหม่ได้"
+      : "นับจากยอดคงเหลือ (รายรับ − รายจ่าย) ตั้งแต่ " + esc(thMonth(from))}</p>`;
+  } else {
+    body = `<p class="gnone">ใส่จำนวนเงินกับเดือนที่อยากได้ แล้วแอปจะบอกว่าต้องเก็บเดือนละเท่าไหร่ถึงจะทัน</p>`;
+  }
+  $("svResult").innerHTML = body;
+  renderGoalDot();
+}
+/* ตั้งงบให้อัตโนมัติจากค่าใช้จ่ายจริง 3 เดือนที่ผ่านมา (ไม่นับเดือนปัจจุบันที่ยังไม่จบ) */
+function suggestBudgets() {
+  const ym = todayISO().slice(0, 7);
+  const months = [];
+  let [y, m] = ym.split("-").map(Number);
+  for (let i = 0; i < 3; i++) { m--; if (m === 0) { m = 12; y--; } months.unshift(y + "-" + String(m).padStart(2, "0")); }
+  const have = months.filter((mm) => state.tx.some((t) => t.date.slice(0, 7) === mm));
+  if (!have.length) { toast("ยังไม่มีข้อมูลของเดือนก่อน ๆ ให้คำนวณ"); return; }
+  const roundUp = (n) => n <= 0 ? 0 : Math.ceil(n / 100) * 100;
+  const cats = {};
+  state.cats.filter((c) => c.type === "expense").forEach((c) => {
+    const avg = have.reduce((a, mm) => a + catSpent(mm, c.id), 0) / have.length;
+    if (avg > 0) cats[c.id] = roundUp(avg);
+  });
+  const avgInc = have.reduce((a, mm) => a + monthTotals(mm).inc, 0) / have.length;
+  const avgExp = have.reduce((a, mm) => a + monthTotals(mm).exp, 0) / have.length;
+  const n = Object.keys(cats).length;
+  confirmDlg("ตั้งงบจากของจริง?",
+    "คำนวณจาก " + have.length + " เดือนที่ผ่านมา (" + have.map(thMonth).join(", ") + ") จะตั้งงบให้ " + n +
+    " หมวด พร้อมเป้ารายรับและเพดานรายจ่าย — งบเดิมที่ตั้งไว้จะถูกแทนที่",
+    () => {
+      state.goals.cats = cats;
+      state.goals.income = roundUp(avgInc);
+      state.goals.cap = roundUp(avgExp);
+      touch(); render();
+      toast("ตั้งงบให้ " + n + " หมวดแล้ว — ปรับตัวเลขได้ตามใจ");
+    });
+}
+/* เตือนตอนบันทึกรายจ่ายที่ทำให้เกินงบ */
+function budgetWarn(t) {
+  if (!t || t.type !== "expense") return;
+  const ym = t.date.slice(0, 7);
+  if (ym !== todayISO().slice(0, 7)) return;
+  const lim = +state.goals.cats[t.cat] || 0;
+  if (lim > 0) {
+    const spent = catSpent(ym, t.cat);
+    if (spent > lim) { toast("เกินงบ " + catName(t.cat) + " แล้ว " + fmt0(spent - lim) + " บาท"); return; }
+  }
+  const cap = +state.goals.cap || 0;
+  if (cap > 0) {
+    const exp = monthTotals(ym).exp;
+    if (exp > cap) toast("เกินเพดานรายจ่ายเดือนนี้แล้ว " + fmt0(exp - cap) + " บาท");
+  }
 }
 
 /* ============ toast ============ */
@@ -1242,6 +1545,7 @@ function submitEntry() {
   resetForm();
   render();
   toast(was ? "แก้ไขรายการแล้ว" : "บันทึก " + fmt(amount) + " บาทแล้ว");
+  setTimeout(() => budgetWarn({ type, cat, date }), 1500);
   $("txName").focus();
 }
 function startEdit(id) {
@@ -1498,7 +1802,7 @@ function importFile(file) {
     try { o = JSON.parse(fr.result); } catch (e) {}
     if (!o || !Array.isArray(o.tx) || !Array.isArray(o.cats)) { toast("ไฟล์ไม่ถูกต้อง ต้องเป็นไฟล์สำรองที่ดาวน์โหลดจากแอปนี้"); return; }
     confirmDlg("นำเข้าข้อมูล?", "รายการปัจจุบัน " + state.tx.length + " รายการจะถูกแทนที่ด้วย " + o.tx.length + " รายการจากไฟล์", () => {
-      state = { v: 1, updatedAt: Date.now(), cats: o.cats, tx: o.tx };
+      state = { v: 1, updatedAt: Date.now(), cats: o.cats, tx: o.tx, goals: normalizeGoals(o) };
       resetForm(); touch(); render(); toast("นำเข้าข้อมูลแล้ว");
     });
   };
@@ -1567,6 +1871,31 @@ $("tbody").addEventListener("click", (e) => {
 });
 document.querySelectorAll('input[name="dtype"]').forEach((r) => r.addEventListener("change", renderDonut));
 window.addEventListener("scroll", hideTip, { passive: true });
+
+/* ---- goals wiring ---- */
+$("autoBudget").addEventListener("click", suggestBudgets);
+["monthGoals", "catGoals"].forEach((id) => {
+  $(id).addEventListener("change", (e) => {
+    const el = e.target.closest("[data-g]"); if (!el) return;
+    const v = Math.max(0, Math.round(+el.value || 0));
+    if (el.dataset.g === "cat") {
+      if (v > 0) state.goals.cats[el.dataset.cid] = v; else delete state.goals.cats[el.dataset.cid];
+    } else {
+      state.goals[el.dataset.g] = v;
+    }
+    touch(); renderGoals();
+  });
+});
+$("svResult").parentElement.addEventListener("change", (e) => {
+  const t = $("svTarget"), d = $("svDeadline");
+  if (!t || !d) return;
+  const sv = state.goals.save;
+  sv.target = Math.max(0, Math.round(+t.value || 0));
+  sv.deadline = d.value || "";
+  if (sv.target > 0 && sv.deadline && !sv.from) sv.from = todayISO().slice(0, 7);
+  if (!sv.target || !sv.deadline) sv.from = sv.from || "";
+  touch(); renderGoals();
+});
 
 /* ---- import dialog wiring ---- */
 $("openImport").addEventListener("click", () => openImport(""));
