@@ -323,6 +323,80 @@ tfoot .lab{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:va
 .foot{font-size:12px;color:var(--ink-3);line-height:1.7;padding:4px 2px}
 .foot code{font-family:"IBM Plex Mono",monospace;background:var(--surface-2);padding:1px 5px;border-radius:4px;font-size:11.5px}
 
+
+/* ---------- tabs & pages ---------- */
+.tabs{display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:11px;padding:4px}
+.tab{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 10px;
+  border-radius:8px;text-decoration:none;color:var(--ink-2);font-weight:500;font-size:14px;
+  transition:background .12s,color .12s;-webkit-tap-highlight-color:transparent}
+.tab svg{width:17px;height:17px;flex:none}
+.tab:hover{color:var(--ink)}
+.tab.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.pages{display:block}
+.page{display:flex;flex-direction:column;gap:16px}
+.page[hidden]{display:none}
+.pagebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pagebar .spacer{flex:1}
+.pagebar input[type="search"]{background:var(--surface);border:1px solid var(--line);border-radius:8px;
+  padding:7px 11px;font-size:13.5px;min-width:170px;flex:1}
+.linky{font-size:13px;color:var(--accent);text-decoration:none;font-weight:500}
+.linky:hover{text-decoration:underline}
+.gear{border:1px solid var(--line);background:var(--surface);color:var(--ink-2);
+  border-radius:9px;padding:6px 10px;font-size:16px;line-height:1.4}
+.gear:hover{background:var(--surface-2);color:var(--ink)}
+
+@media (max-width:700px){
+  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;border:none;border-top:1px solid var(--line);
+    border-radius:0;background:var(--surface);gap:0;
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+    box-shadow:0 -4px 18px -12px rgba(0,0,0,.5)}
+  .tab{flex-direction:column;gap:3px;font-size:11px;padding:6px 4px}
+  .tab svg{width:21px;height:21px}
+  .tab.on{background:transparent;box-shadow:none;color:var(--accent)}
+  .app{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+  #saveChip{display:none}
+}
+
+/* ---------- summary strip (record page) ---------- */
+.strip{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:11px 16px;font-size:13.5px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.strip .sl{color:var(--ink-3);font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:500}
+.strip .si,.strip .se{display:inline-flex;align-items:center;gap:6px;
+  font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.strip .si{color:var(--income)}
+.strip .se{color:var(--expense)}
+.strip .si i,.strip .se i{width:8px;height:8px;border-radius:2px;background:currentColor;display:block;flex:none}
+.strip .sn{margin-left:auto;color:var(--ink-3);display:inline-flex;align-items:baseline;gap:7px}
+.strip .sn b{font-family:"IBM Plex Mono",monospace;font-size:17px;color:var(--ink);
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.strip .sn.neg b{color:var(--expense)}
+@media (max-width:480px){.strip{gap:12px}.strip .sn{margin-left:0;width:100%}}
+
+/* ---------- recent list (record page) ---------- */
+.recent{list-style:none;margin:0;padding:6px}
+.recent li{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:12px;align-items:center;
+  padding:8px 10px;border-radius:8px}
+.recent li:hover{background:var(--surface-2)}
+.recent .rd{font-size:12.5px;color:var(--ink-3);white-space:nowrap}
+.recent .rn{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.recent .rn b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.recent .ra{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:14px}
+.recent .ra.in{color:var(--income)}
+.recent .ra.out{color:var(--expense)}
+.recent .rx{display:flex;gap:2px;opacity:.35;transition:opacity .12s}
+.recent li:hover .rx,.recent .rx:focus-within{opacity:1}
+.recent .none{padding:26px 12px;text-align:center;color:var(--ink-3);font-size:13.5px}
+@media (max-width:480px){.recent li{grid-template-columns:minmax(0,1fr) auto auto;gap:8px}.recent .rd{display:none}}
+
+/* ---------- settings dialog ---------- */
+.setgroup{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);
+  font-weight:600;margin:20px 0 9px}
+.setgroup:first-child{margin-top:0}
+.setrow{display:flex;gap:8px;flex-wrap:wrap}
+.btn.ghost.danger{color:var(--expense);border-color:color-mix(in srgb, var(--expense) 34%, var(--line))}
+.btn.ghost.danger:hover{background:var(--expense-soft);color:var(--expense)}
+
 /* ---------- dialog ---------- */
 dialog{
   border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);
@@ -385,14 +459,22 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
       </div>
     </div>
     <div class="topbar-right">
-      <select id="periodSel" class="sel" aria-label="เลือกช่วงเวลา"></select>
       <button id="installBtn" class="btn sm" hidden>ติดตั้งแอป</button>
       <span id="saveChip" class="chip" data-state="idle">กำลังเปิด…</span>
+      <button class="gear" id="openSettings" aria-label="ตั้งค่า" title="ตั้งค่า">⚙</button>
     </div>
   </header>
 
-  <section class="tiles" id="tiles"></section>
+  <nav class="tabs" role="tablist" aria-label="หน้าในแอป">
+    <a class="tab" href="#/record" data-tab="record" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19.5 8.5a2.5 2.5 0 0 0-3.5-3.5L4.5 16.5 4 20Z"/></svg><span>บันทึก</span></a>
+    <a class="tab" href="#/dashboard" data-tab="dashboard" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20.5h18"/><path d="M6.5 17V11"/><path d="M12 17V4.5"/><path d="M17.5 17v-4"/></svg><span>แดชบอร์ด</span></a>
+    <a class="tab" href="#/list" data-tab="list" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg><span>รายการ</span></a>
+  </nav>
 
+  <main class="pages">
+
+    <section class="page" data-page="record">
+      <div class="strip" id="strip"></div>
   <section class="card entry">
     <div class="form-grid">
       <div class="f c-type">
@@ -441,6 +523,20 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
     </div>
   </section>
 
+      <section class="card">
+        <div class="card-head">
+          <h2>รายการล่าสุด</h2>
+          <a class="linky" href="#/list">ดูทั้งหมด →</a>
+        </div>
+        <ul class="recent" id="recent"></ul>
+      </section>
+    </section>
+
+    <section class="page" data-page="dashboard" hidden>
+      <div class="pagebar">
+        <select id="periodSelDash" class="sel" aria-label="เลือกช่วงเวลา"></select>
+      </div>
+      <section class="tiles" id="tiles"></section>
   <section class="card">
     <div class="card-head">
       <h2>แนวโน้มรายเดือน</h2>
@@ -470,18 +566,21 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
     <div class="donut-wrap" id="donutWrap"></div>
   </section>
 
-  <section class="card">
-    <div class="card-head">
-      <h2>ตารางรายการ</h2>
-      <div class="toolbar">
+    </section>
+
+    <section class="page" data-page="list" hidden>
+      <div class="pagebar">
+        <select id="periodSelList" class="sel" aria-label="เลือกช่วงเวลา"></select>
         <input type="search" id="q" placeholder="ค้นหารายการ / หมวดหมู่" aria-label="ค้นหา">
         <select id="filterType" class="sel" aria-label="กรองประเภท">
           <option value="all">ทุกประเภท</option>
           <option value="income">เฉพาะรายรับ</option>
           <option value="expense">เฉพาะรายจ่าย</option>
         </select>
+        <span class="spacer"></span>
+        <button class="btn ghost sm" id="exportCsv">ดาวน์โหลด CSV</button>
       </div>
-    </div>
+  <section class="card">
     <div class="tscroll">
       <table id="tbl">
         <thead>
@@ -501,29 +600,24 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
     </div>
     <div class="empty" id="empty" hidden>
       <strong>ยังไม่มีรายการในช่วงนี้</strong>
-      <span>กรอกแบบฟอร์มด้านบนเพื่อเริ่มบันทึกรายการแรก</span>
+      <span>ไปที่หน้า <a class="linky" href="#/record">บันทึก</a> เพื่อเพิ่มรายการ</span>
     </div>
   </section>
 
-  <div class="tools">
-    <button class="btn ghost sm" id="manageCats">จัดการหมวดหมู่</button>
-    <button class="btn ghost sm" id="exportCsv">ดาวน์โหลด CSV</button>
-    <button class="btn ghost sm" id="backupJson">สำรองข้อมูล (JSON)</button>
-    <button class="btn ghost sm" id="importJson">นำเข้าข้อมูล</button>
-    <input type="file" id="importFile" accept=".json,application/json" hidden>
-    <span class="spacer"></span>
-    <button class="btn ghost sm" id="clearAll">ล้างข้อมูลทั้งหมด</button>
-  </div>
+    </section>
+
+  </main>
 
   <p class="foot" id="footNote"></p>
 </div>
 
-<dialog id="catDlg">
+<dialog id="setDlg">
   <div class="dlg-head">
-    <h2>หมวดหมู่</h2>
-    <button class="iconbtn" id="catClose" aria-label="ปิด">✕</button>
+    <h2>ตั้งค่า</h2>
+    <button class="iconbtn" id="setClose" aria-label="ปิด">✕</button>
   </div>
   <div class="dlg-body">
+    <h3 class="setgroup">หมวดหมู่</h3>
     <div class="catlist" id="catList"></div>
     <div class="addcat">
       <input type="text" id="newCatName" placeholder="ชื่อหมวดใหม่" autocomplete="off">
@@ -532,6 +626,14 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
         <option value="income">รายรับ</option>
       </select>
       <button class="btn sm" id="addCatBtn">เพิ่ม</button>
+    </div>
+
+    <h3 class="setgroup">ข้อมูล</h3>
+    <div class="setrow">
+      <button class="btn ghost sm" id="backupJson">สำรองข้อมูล (JSON)</button>
+      <button class="btn ghost sm" id="importJson">นำเข้าข้อมูล</button>
+      <input type="file" id="importFile" accept=".json,application/json" hidden>
+      <button class="btn ghost sm danger" id="clearAll">ล้างข้อมูลทั้งหมด</button>
     </div>
   </div>
 </dialog>
@@ -656,8 +758,29 @@ function boot() {
   chip(local ? "บันทึกแล้ว" : "พร้อมใช้งาน", local ? "saved" : "idle");
 }
 
+/* ============ router ============ */
+const PAGES = ["record", "dashboard", "list"];
+function currentPage() {
+  const h = (location.hash || "").replace(/^#\/?/, "");
+  return PAGES.includes(h) ? h : "record";
+}
+function showPage(page) {
+  document.querySelectorAll(".page").forEach((el) => { el.hidden = el.dataset.page !== page; });
+  document.querySelectorAll(".tab").forEach((a) => {
+    const on = a.dataset.tab === page;
+    a.classList.toggle("on", on);
+    a.setAttribute("aria-selected", on ? "true" : "false");
+  });
+  hideTip();
+}
+function goPage(page) {
+  if (currentPage() === page) { showPage(page); return; }
+  location.hash = "#/" + page;
+}
+
 /* ============ derived ============ */
-function periodKey() { return $("periodSel").value || "all"; }
+let curPeriod = "";
+function periodKey() { return curPeriod || "all"; }
 function inPeriod(t) {
   const p = periodKey();
   return p === "all" ? true : t.date.slice(0, 7) === p;
@@ -682,14 +805,19 @@ function visibleTx() {
 
 /* ============ render ============ */
 function renderPeriods() {
-  const sel = $("periodSel");
-  const prev = sel.value;
   const months = [...new Set(state.tx.map((t) => t.date.slice(0, 7)))].sort().reverse();
   const cur = todayISO().slice(0, 7);
   if (!months.includes(cur)) months.unshift(cur);
-  sel.innerHTML = '<option value="all">ทุกช่วงเวลา</option>' +
+  const valid = ["all", ...months];
+  if (!valid.includes(curPeriod)) curPeriod = cur;
+  const html = '<option value="all">ทุกช่วงเวลา</option>' +
     months.map((m) => `<option value="${m}">${esc(thMonth(m))}</option>`).join("");
-  sel.value = (prev && [...sel.options].some((o) => o.value === prev)) ? prev : cur;
+  ["periodSelDash", "periodSelList"].forEach((id) => {
+    const sel = $(id);
+    if (!sel) return;
+    sel.innerHTML = html;
+    sel.value = curPeriod;
+  });
 }
 function renderCatSelect() {
   const type = document.querySelector('input[name="ttype"]:checked').value;
@@ -699,6 +827,42 @@ function renderCatSelect() {
   sel.innerHTML = list.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("") ||
     '<option value="">— ยังไม่มีหมวด —</option>';
   if (list.some((c) => c.id === prev)) sel.value = prev;
+}
+function renderStrip() {
+  const el = $("strip");
+  if (!el) return;
+  const ym = todayISO().slice(0, 7);
+  const rows = state.tx.filter((t) => t.date.slice(0, 7) === ym);
+  const inc = rows.filter((t) => t.type === "income").reduce((a, t) => a + t.amount, 0);
+  const exp = rows.filter((t) => t.type === "expense").reduce((a, t) => a + t.amount, 0);
+  const net = inc - exp;
+  el.innerHTML = `<span class="sl">${esc(thMonth(ym))}</span>
+    <span class="si"><i></i>${fmt0(inc)}</span>
+    <span class="se"><i></i>${fmt0(exp)}</span>
+    <span class="sn${net < 0 ? " neg" : ""}">คงเหลือ <b>${fmt0(net)}</b></span>`;
+}
+function renderRecent() {
+  const el = $("recent");
+  if (!el) return;
+  const rows = [...state.tx]
+    .sort((a, b) => a.date === b.date ? (b.seq || 0) - (a.seq || 0) : (a.date < b.date ? 1 : -1))
+    .slice(0, 8);
+  if (!rows.length) {
+    el.innerHTML = '<li class="none">ยังไม่มีรายการ — กรอกช่องด้านบนเพื่อเริ่มบันทึกรายการแรก</li>';
+    return;
+  }
+  el.innerHTML = rows.map((t) => {
+    const isIn = t.type === "income";
+    return `<li data-id="${t.id}">
+      <span class="rd">${esc(thDate(t.date))}</span>
+      <span class="rn"><b>${esc(t.name)}</b><span class="tag ${isIn ? "in" : "out"}">${esc(catName(t.cat))}</span></span>
+      <span class="ra ${isIn ? "in" : "out"}">${isIn ? "+" : "−"}${fmt(t.amount)}</span>
+      <span class="rx">
+        <button class="iconbtn" data-act="edit" title="แก้ไข" aria-label="แก้ไข ${esc(t.name)}">✎</button>
+        <button class="iconbtn" data-act="del" title="ลบ" aria-label="ลบ ${esc(t.name)}">🗑</button>
+      </span>
+    </li>`;
+  }).join("");
 }
 function renderTiles() {
   const rows = state.tx.filter(inPeriod);
@@ -941,6 +1105,8 @@ function renderFoot() {
 function render() {
   renderPeriods();
   renderCatSelect();
+  renderStrip();
+  renderRecent();
   renderTiles();
   renderTable();
   renderTrend();
@@ -1031,8 +1197,9 @@ function startEdit(id) {
   $("saveBtn").textContent = "อัปเดตรายการ";
   $("cancelEdit").hidden = false;
   updateEq();
-  $("txName").focus();
+  goPage("record");
   window.scrollTo({ top: 0, behavior: "smooth" });
+  $("txName").focus();
 }
 function removeTx(id) {
   const i = state.tx.findIndex((x) => x.id === id);
@@ -1136,14 +1303,31 @@ $("tbody").addEventListener("click", (e) => {
   else removeTx(id);
 });
 
-$("periodSel").addEventListener("change", () => { renderTiles(); renderTable(); renderDonut(); });
+["periodSelDash", "periodSelList"].forEach((id) => {
+  const sel = $(id);
+  if (!sel) return;
+  sel.addEventListener("change", () => {
+    curPeriod = sel.value;
+    renderPeriods();          // keep the other page's selector in sync
+    renderTiles(); renderTable(); renderDonut();
+  });
+});
 document.querySelectorAll('input[name="dtype"]').forEach((r) => r.addEventListener("change", renderDonut));
 window.addEventListener("scroll", hideTip, { passive: true });
+
+$("recent").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-act]"); if (!btn) return;
+  const id = btn.closest("li").dataset.id;
+  if (btn.dataset.act === "edit") startEdit(id); else removeTx(id);
+});
+
+window.addEventListener("hashchange", () => { showPage(currentPage()); window.scrollTo({ top: 0 }); });
+showPage(currentPage());
 $("q").addEventListener("input", renderTable);
 $("filterType").addEventListener("change", renderTable);
 
-$("manageCats").addEventListener("click", () => { renderCatDlg(); $("catDlg").showModal(); });
-$("catClose").addEventListener("click", () => $("catDlg").close());
+$("openSettings").addEventListener("click", () => { renderCatDlg(); $("setDlg").showModal(); });
+$("setClose").addEventListener("click", () => $("setDlg").close());
 $("addCatBtn").addEventListener("click", () => {
   const name = $("newCatName").value.trim();
   const type = $("newCatType").value;
