@@ -477,6 +477,40 @@ tfoot .lab{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:va
 .gbig .k{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
 .gbig .v{font-family:"IBM Plex Mono",monospace;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
 
+
+/* ---------- debts ---------- */
+.debtpad{padding:12px;display:flex;flex-direction:column;gap:9px}
+.dcard{border:1px solid var(--line);border-radius:10px;padding:12px 13px;display:flex;flex-direction:column;gap:8px}
+.dcard:hover{border-color:var(--line-strong)}
+.dcard.done{opacity:.6}
+.dtop{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.dname{font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dnote{font-size:12px;color:var(--ink-3);font-weight:400}
+.dremain{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+  font-size:18px;font-weight:600;white-space:nowrap;letter-spacing:-.01em}
+.dremain.owe{color:var(--expense)}
+.dremain.lent{color:var(--income)}
+.dremain.zero{color:var(--ink-3)}
+.dbar{height:7px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.dbar i{display:block;height:100%;border-radius:4px;transition:width .4s}
+.dcard.owe .dbar i{background:var(--income)}
+.dcard.lent .dbar i{background:var(--income)}
+.dmeta{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-3)}
+.dmeta .gnum{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.dfoot{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.dbadge{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--surface-2);
+  color:var(--ink-2);white-space:nowrap;font-weight:500}
+.dbadge.late{background:var(--expense-soft);color:var(--expense)}
+.dbadge.soon{background:var(--surface-3);color:var(--ink)}
+.dbadge.ok,.dbadge.done{background:var(--income-soft);color:var(--income)}
+.dfoot .sp{flex:1}
+.dnone{padding:24px 12px;text-align:center;color:var(--ink-3);font-size:13.5px;line-height:1.8}
+.dhist{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+.dhist h3{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:8px}
+.dhist ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.dhist li{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:5px 2px}
+.dhist li span:last-child{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+
 /* ---------- dialog ---------- */
 dialog{
   border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);
@@ -549,6 +583,7 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
     <a class="tab" href="#/record" data-tab="record" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19.5 8.5a2.5 2.5 0 0 0-3.5-3.5L4.5 16.5 4 20Z"/></svg><span>บันทึก</span></a>
     <a class="tab" href="#/dashboard" data-tab="dashboard" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20.5h18"/><path d="M6.5 17V11"/><path d="M12 17V4.5"/><path d="M17.5 17v-4"/></svg><span>แดชบอร์ด</span></a>
     <a class="tab" href="#/goals" data-tab="goals" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.6"/><path d="M12 3.5v-2M12 22.5v-2M3.5 12h-2M22.5 12h-2"/></svg><span>เป้าหมาย</span><i class="tdot" id="goalDot" hidden></i></a>
+    <a class="tab" href="#/debt" data-tab="debt" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5h18v11a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5v-11Z"/><path d="M7.5 7.5V5a1.5 1.5 0 0 1 1.5-1.5h6A1.5 1.5 0 0 1 16.5 5v2.5"/><path d="M9.5 13.5h5"/></svg><span>หนี้</span><i class="tdot" id="debtDot" hidden></i></a>
     <a class="tab" href="#/list" data-tab="list" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg><span>รายการ</span></a>
   </nav>
 
@@ -689,6 +724,26 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
       </section>
     </section>
 
+    <section class="page" data-page="debt" hidden>
+      <div class="strip" id="debtStrip"></div>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>เราติดเขา</h2>
+          <button class="btn ghost sm" data-newdebt="owe">＋ เพิ่มหนี้</button>
+        </div>
+        <div class="debtpad" id="debtOwe"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>เขาติดเรา</h2>
+          <button class="btn ghost sm" data-newdebt="lent">＋ เพิ่มลูกหนี้</button>
+        </div>
+        <div class="debtpad" id="debtLent"></div>
+      </section>
+    </section>
+
     <section class="page" data-page="list" hidden>
       <div class="pagebar">
         <select id="periodSelList" class="sel" aria-label="เลือกช่วงเวลา"></select>
@@ -782,6 +837,79 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
   </div>
 </dialog>
 
+<dialog id="debtDlg">
+  <div class="dlg-head">
+    <h2 id="ddTitle">เพิ่มรายการหนี้</h2>
+    <button class="iconbtn" id="ddClose" aria-label="ปิด">✕</button>
+  </div>
+  <div class="dlg-body">
+    <div class="form-grid">
+      <div class="f" style="grid-column:span 12">
+        <label class="flab" for="ddName">ชื่อ (เจ้าหนี้ / ลูกหนี้)</label>
+        <input type="text" id="ddName" placeholder="เช่น ผ่อนรถ ธนาคาร ก. หรือ ร้านป้าแดง" autocomplete="off">
+      </div>
+      <div class="f" style="grid-column:span 6">
+        <label class="flab" for="ddPrincipal">ยอดตั้งต้น</label>
+        <input type="text" id="ddPrincipal" class="num" placeholder="50000  หรือ  2500*24" autocomplete="off">
+      </div>
+      <div class="f" style="grid-column:span 6">
+        <label class="flab" for="ddStart">วันที่เริ่ม</label>
+        <input type="date" id="ddStart">
+      </div>
+      <div class="f" style="grid-column:span 6" id="ddPerWrap">
+        <label class="flab" for="ddPer">ผ่อนงวดละ (ถ้ามี)</label>
+        <input type="text" id="ddPer" class="num" placeholder="2500" autocomplete="off">
+      </div>
+      <div class="f" style="grid-column:span 6" id="ddDayWrap">
+        <label class="flab" for="ddDay">ครบกำหนดทุกวันที่</label>
+        <input type="number" id="ddDay" min="1" max="31" placeholder="5" inputmode="numeric">
+      </div>
+      <div class="f" style="grid-column:span 6" id="ddDueWrap" hidden>
+        <label class="flab" for="ddDue">กำหนดคืน</label>
+        <input type="date" id="ddDue">
+      </div>
+      <div class="f" style="grid-column:span 12">
+        <label class="flab" for="ddNote">หมายเหตุ</label>
+        <input type="text" id="ddNote" placeholder="ไม่บังคับ" autocomplete="off">
+      </div>
+    </div>
+  </div>
+  <div class="dlg-foot">
+    <button class="btn ghost sm danger" id="ddDelete" hidden>ลบรายการนี้</button>
+    <button class="btn ghost sm" id="ddCancel">ยกเลิก</button>
+    <button class="btn sm" id="ddSave">บันทึก</button>
+  </div>
+</dialog>
+
+<dialog id="payDlg">
+  <div class="dlg-head">
+    <h2 id="pyTitle">บันทึกชำระ</h2>
+    <button class="iconbtn" id="pyClose" aria-label="ปิด">✕</button>
+  </div>
+  <div class="dlg-body">
+    <p class="gnone" id="pyInfo" style="margin:0 0 12px"></p>
+    <div class="form-grid">
+      <div class="f" style="grid-column:span 7">
+        <label class="flab" for="pyAmt">จำนวนที่ชำระ · คิดเลขได้</label>
+        <input type="text" id="pyAmt" class="num" autocomplete="off">
+      </div>
+      <div class="f" style="grid-column:span 5">
+        <label class="flab" for="pyDate">วันที่</label>
+        <input type="date" id="pyDate">
+      </div>
+    </div>
+    <div class="setrow" style="margin-top:10px">
+      <button class="btn ghost sm" id="pyFull">ชำระทั้งหมด</button>
+      <button class="btn ghost sm" id="pyPer" hidden>เท่างวด</button>
+    </div>
+    <div id="pyHist"></div>
+  </div>
+  <div class="dlg-foot">
+    <button class="btn ghost sm" id="pyCancel">ยกเลิก</button>
+    <button class="btn sm" id="pySave">บันทึกชำระ</button>
+  </div>
+</dialog>
+
 <dialog id="confirmDlg">
   <div class="dlg-head"><h2 id="cfTitle">ยืนยัน</h2></div>
   <div class="dlg-body"><p id="cfBody" style="margin:0;color:var(--ink-2)"></p></div>
@@ -828,7 +956,8 @@ const freshState = () => ({
   updatedAt: 0,
   cats: DEFAULT_CATS.map(([name, type], i) => ({ id: "c" + i, name, type })),
   tx: [],
-  goals: emptyGoals()
+  goals: emptyGoals(),
+  debts: []
 });
 function normalizeGoals(o) {
   const g = Object.assign(emptyGoals(), o && o.goals);
@@ -892,6 +1021,7 @@ function readLocal() {
     const o = JSON.parse(raw);
     if (!o || !Array.isArray(o.tx) || !Array.isArray(o.cats)) return null;
     o.goals = normalizeGoals(o);
+    o.debts = Array.isArray(o.debts) ? o.debts : [];
     return o;
   } catch (e) { return null; }
 }
@@ -921,7 +1051,7 @@ function boot() {
 }
 
 /* ============ router ============ */
-const PAGES = ["record", "dashboard", "goals", "list"];
+const PAGES = ["record", "dashboard", "goals", "debt", "list"];
 function currentPage() {
   const h = (location.hash || "").replace(/^#\/?/, "");
   return PAGES.includes(h) ? h : "record";
@@ -1274,6 +1404,7 @@ function render() {
   renderTrend();
   renderDonut();
   renderGoals();
+  renderDebts();
   renderFoot();
 }
 
@@ -1475,6 +1606,193 @@ function budgetWarn(t) {
     const exp = monthTotals(ym).exp;
     if (exp > cap) toast("เกินเพดานรายจ่ายเดือนนี้แล้ว " + fmt0(exp - cap) + " บาท");
   }
+}
+
+
+/* ============ debts ============ */
+const DEBT_CAT = { owe: ["ชำระหนี้/ผ่อน", "expense"], lent: ["รับชำระหนี้", "income"] };
+function debtCatId(side) {
+  const [name, type] = DEBT_CAT[side];
+  let c = state.cats.find((x) => x.type === type && x.name === name);
+  if (!c) { c = { id: uid(), name, type }; state.cats.push(c); }
+  return c.id;
+}
+const debtPaid = (d) => (d.payments || []).reduce((a, p) => a + p.amount, 0);
+const debtLeft = (d) => Math.max(0, Math.round((d.principal - debtPaid(d)) * 100) / 100);
+function daysBetween(a, b) {
+  return Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000);
+}
+function debtStatus(d) {
+  if (debtLeft(d) <= 0) return { kind: "done", text: "ปิดยอดแล้ว" };
+  const today = todayISO();
+  if (d.side === "lent") {
+    if (!d.due) return { kind: "open", text: "ยังไม่กำหนดวันคืน" };
+    const n = daysBetween(today, d.due);
+    if (n < 0) return { kind: "late", text: "เกินกำหนด " + (-n) + " วัน" };
+    if (n === 0) return { kind: "soon", text: "ครบกำหนดวันนี้" };
+    if (n <= 7) return { kind: "soon", text: "อีก " + n + " วัน" };
+    return { kind: "open", text: "กำหนด " + thDate(d.due) };
+  }
+  if (!d.dueDay) return { kind: "open", text: "" };
+  const ym = today.slice(0, 7);
+  if ((d.payments || []).some((p) => p.date.slice(0, 7) === ym)) return { kind: "ok", text: "จ่ายเดือนนี้แล้ว" };
+  const dim = monthMeta(ym).days;
+  const n = daysBetween(today, ym + "-" + String(Math.min(d.dueDay, dim)).padStart(2, "0"));
+  if (n < 0) return { kind: "late", text: "เกินกำหนด " + (-n) + " วัน" };
+  if (n === 0) return { kind: "soon", text: "ครบกำหนดวันนี้" };
+  if (n <= 7) return { kind: "soon", text: "อีก " + n + " วัน" };
+  return { kind: "open", text: "ทุกวันที่ " + d.dueDay };
+}
+function renderDebtDot() {
+  const dot = $("debtDot");
+  if (!dot) return;
+  dot.hidden = !state.debts.some((d) => debtLeft(d) > 0 && debtStatus(d).kind === "late");
+}
+function debtCard(d) {
+  const left = debtLeft(d), paid = debtPaid(d);
+  const pct = d.principal > 0 ? Math.min(100, (paid / d.principal) * 100) : 0;
+  const st = debtStatus(d);
+  const done = left <= 0;
+  return `<div class="dcard ${d.side}${done ? " done" : ""}" data-id="${d.id}">
+    <div class="dtop">
+      <span class="dname">${esc(d.name)}${d.note ? ` <span class="dnote">${esc(d.note)}</span>` : ""}</span>
+      <span class="dremain ${done ? "zero" : d.side}">${fmt0(left)}</span>
+    </div>
+    <div class="dbar"><i style="width:${pct.toFixed(1)}%"></i></div>
+    <div class="dmeta">
+      <span>ยอดเต็ม <span class="gnum">${fmt0(d.principal)}</span></span>
+      <span>ชำระแล้ว <span class="gnum">${fmt0(paid)}</span> (${Math.round(pct)}%)</span>
+      ${d.per ? `<span>งวดละ <span class="gnum">${fmt0(d.per)}</span></span>` : ""}
+    </div>
+    <div class="dfoot">
+      ${st.text ? `<span class="dbadge ${st.kind}">${esc(st.text)}</span>` : ""}
+      <span class="sp"></span>
+      ${done ? "" : `<button class="btn sm" data-act="pay">บันทึกชำระ</button>`}
+      <button class="iconbtn" data-act="edit" title="แก้ไข" aria-label="แก้ไข ${esc(d.name)}">✎</button>
+    </div>
+  </div>`;
+}
+function renderDebts() {
+  if (!$("debtStrip")) return;
+  const owe = state.debts.filter((d) => d.side === "owe");
+  const lent = state.debts.filter((d) => d.side === "lent");
+  const sumOwe = owe.reduce((a, d) => a + debtLeft(d), 0);
+  const sumLent = lent.reduce((a, d) => a + debtLeft(d), 0);
+  const net = sumLent - sumOwe;
+  $("debtStrip").innerHTML = `<span class="sl">ยอดคงค้าง</span>
+    <span class="se"><i></i>เราติดเขา ${fmt0(sumOwe)}</span>
+    <span class="si"><i></i>เขาติดเรา ${fmt0(sumLent)}</span>
+    <span class="sn${net < 0 ? " neg" : ""}">สุทธิ <b>${fmt0(net)}</b></span>`;
+
+  const order = (a, b) => {
+    const rank = { late: 0, soon: 1, open: 2, ok: 3, done: 4 };
+    return rank[debtStatus(a).kind] - rank[debtStatus(b).kind] || debtLeft(b) - debtLeft(a);
+  };
+  $("debtOwe").innerHTML = owe.length ? [...owe].sort(order).map(debtCard).join("")
+    : `<p class="dnone">ยังไม่มีหนี้ที่ต้องจ่าย<br>กด <b>＋ เพิ่มหนี้</b> เพื่อจดยอดผ่อนรถ บัตรเครดิต หรือค้างซัพพลายเออร์</p>`;
+  $("debtLent").innerHTML = lent.length ? [...lent].sort(order).map(debtCard).join("")
+    : `<p class="dnone">ยังไม่มีใครค้างเรา<br>กด <b>＋ เพิ่มลูกหนี้</b> เพื่อจดลูกค้าซื้อเชื่อหรือเพื่อนยืมเงิน</p>`;
+  renderDebtDot();
+}
+
+/* ---- add / edit ---- */
+let editDebt = null;
+function openDebtDlg(side, id) {
+  editDebt = id ? state.debts.find((d) => d.id === id) : null;
+  const d = editDebt;
+  const sd = d ? d.side : side;
+  $("ddTitle").textContent = d ? "แก้ไขรายการ" : (sd === "owe" ? "เพิ่มหนี้ที่เราติดเขา" : "เพิ่มลูกหนี้");
+  $("debtDlg").dataset.side = sd;
+  $("ddName").value = d ? d.name : "";
+  $("ddPrincipal").value = d ? String(d.principal) : "";
+  $("ddStart").value = d ? d.start : todayISO();
+  $("ddPer").value = d && d.per ? String(d.per) : "";
+  $("ddDay").value = d && d.dueDay ? String(d.dueDay) : "";
+  $("ddDue").value = d && d.due ? d.due : "";
+  $("ddNote").value = d ? (d.note || "") : "";
+  $("ddPerWrap").hidden = sd !== "owe";
+  $("ddDayWrap").hidden = sd !== "owe";
+  $("ddDueWrap").hidden = sd !== "lent";
+  $("ddDelete").hidden = !d;
+  $("debtDlg").showModal();
+  $("ddName").focus();
+}
+function saveDebt() {
+  const side = $("debtDlg").dataset.side;
+  const name = $("ddName").value.trim();
+  const principal = evalExpr($("ddPrincipal").value);
+  if (!name) { toast("ใส่ชื่อก่อน"); $("ddName").focus(); return; }
+  if (principal == null || principal <= 0) { toast("ใส่ยอดตั้งต้นให้ถูกต้อง"); $("ddPrincipal").focus(); return; }
+  const per = evalExpr($("ddPer").value);
+  const day = Math.min(31, Math.max(0, Math.round(+$("ddDay").value || 0)));
+  const patch = {
+    side, name, principal,
+    start: $("ddStart").value || todayISO(),
+    per: side === "owe" && per > 0 ? per : 0,
+    dueDay: side === "owe" ? day : 0,
+    due: side === "lent" ? ($("ddDue").value || "") : "",
+    note: $("ddNote").value.trim()
+  };
+  if (editDebt) Object.assign(editDebt, patch);
+  else state.debts.push(Object.assign({ id: uid(), payments: [] }, patch));
+  touch(); render();
+  $("debtDlg").close();
+  toast(editDebt ? "แก้ไขแล้ว" : "เพิ่มรายการแล้ว");
+}
+function removeDebt() {
+  if (!editDebt) return;
+  const d = editDebt, i = state.debts.indexOf(d);
+  const n = (d.payments || []).length;
+  confirmDlg("ลบรายการนี้?",
+    "ลบ “" + d.name + "” ออกจากรายการหนี้" + (n ? " — รายการเงินที่บันทึกไว้ในสมุด " + n + " รายการจะยังอยู่ ไม่ถูกลบ" : ""),
+    () => {
+      state.debts.splice(i, 1);
+      touch(); render();
+      $("debtDlg").close();
+      toast("ลบแล้ว", "เลิกทำ", () => { state.debts.splice(i, 0, d); touch(); render(); });
+    });
+}
+
+/* ---- record a payment: also writes the real money movement into the ledger ---- */
+let payDebt = null;
+function openPayDlg(id) {
+  payDebt = state.debts.find((d) => d.id === id);
+  if (!payDebt) return;
+  const d = payDebt, left = debtLeft(d);
+  $("pyTitle").textContent = d.side === "owe" ? "บันทึกชำระหนี้" : "บันทึกรับชำระ";
+  $("pyInfo").innerHTML = esc(d.name) + " · คงเหลือ <b>" + fmt0(left) + "</b> บาท<br>" +
+    (d.side === "owe"
+      ? "จะบันทึกเป็น <b>รายจ่าย</b> เต็มจำนวนในสมุดด้วย"
+      : "จะบันทึกเป็น <b>รายรับ</b> เต็มจำนวนในสมุดด้วย");
+  $("pyAmt").value = d.per > 0 ? String(Math.min(d.per, left)) : String(left);
+  $("pyDate").value = todayISO();
+  $("pyPer").hidden = !(d.per > 0);
+  const hist = (d.payments || []).slice().reverse();
+  $("pyHist").innerHTML = hist.length ? `<div class="dhist"><h3>ประวัติการชำระ</h3><ul>${
+    hist.map((p) => `<li><span>${esc(thDate(p.date))}</span><span>${fmt(p.amount)}</span></li>`).join("")}</ul></div>` : "";
+  $("payDlg").showModal();
+  $("pyAmt").select();
+}
+function savePayment() {
+  const d = payDebt;
+  if (!d) return;
+  const amount = evalExpr($("pyAmt").value);
+  const date = $("pyDate").value || todayISO();
+  if (amount == null || amount <= 0) { toast("ใส่จำนวนเงินให้ถูกต้อง"); $("pyAmt").focus(); return; }
+  const cat = debtCatId(d.side);
+  const tx = {
+    id: uid(), seq: Date.now(),
+    name: (d.side === "owe" ? "ชำระ " : "รับชำระ ") + d.name,
+    amount, date, cat, type: d.side === "owe" ? "expense" : "income", expr: ""
+  };
+  state.tx.push(tx);
+  (d.payments = d.payments || []).push({ id: uid(), date, amount, txId: tx.id });
+  touch(); render();
+  $("payDlg").close();
+  const left = debtLeft(d);
+  toast(left <= 0 ? "ปิดยอด " + d.name + " แล้ว 🎉"
+                  : "บันทึกแล้ว · คงเหลือ " + fmt0(left) + " บาท");
+  if (d.side === "owe") setTimeout(() => budgetWarn({ type: "expense", cat, date }), 1800);
 }
 
 /* ============ toast ============ */
@@ -1802,7 +2120,8 @@ function importFile(file) {
     try { o = JSON.parse(fr.result); } catch (e) {}
     if (!o || !Array.isArray(o.tx) || !Array.isArray(o.cats)) { toast("ไฟล์ไม่ถูกต้อง ต้องเป็นไฟล์สำรองที่ดาวน์โหลดจากแอปนี้"); return; }
     confirmDlg("นำเข้าข้อมูล?", "รายการปัจจุบัน " + state.tx.length + " รายการจะถูกแทนที่ด้วย " + o.tx.length + " รายการจากไฟล์", () => {
-      state = { v: 1, updatedAt: Date.now(), cats: o.cats, tx: o.tx, goals: normalizeGoals(o) };
+      state = { v: 1, updatedAt: Date.now(), cats: o.cats, tx: o.tx, goals: normalizeGoals(o),
+                debts: Array.isArray(o.debts) ? o.debts : [] };
       resetForm(); touch(); render(); toast("นำเข้าข้อมูลแล้ว");
     });
   };
@@ -1871,6 +2190,29 @@ $("tbody").addEventListener("click", (e) => {
 });
 document.querySelectorAll('input[name="dtype"]').forEach((r) => r.addEventListener("change", renderDonut));
 window.addEventListener("scroll", hideTip, { passive: true });
+
+/* ---- debts wiring ---- */
+document.querySelectorAll("[data-newdebt]").forEach((b) =>
+  b.addEventListener("click", () => openDebtDlg(b.dataset.newdebt, null)));
+["debtOwe", "debtLent"].forEach((id) => {
+  $(id).addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-act]"); if (!btn) return;
+    const card = btn.closest(".dcard"); if (!card) return;
+    if (btn.dataset.act === "pay") openPayDlg(card.dataset.id);
+    else openDebtDlg(null, card.dataset.id);
+  });
+});
+$("ddClose").addEventListener("click", () => $("debtDlg").close());
+$("ddCancel").addEventListener("click", () => $("debtDlg").close());
+$("ddSave").addEventListener("click", saveDebt);
+$("ddDelete").addEventListener("click", removeDebt);
+$("pyClose").addEventListener("click", () => $("payDlg").close());
+$("pyCancel").addEventListener("click", () => $("payDlg").close());
+$("pySave").addEventListener("click", savePayment);
+$("pyFull").addEventListener("click", () => { if (payDebt) { $("pyAmt").value = String(debtLeft(payDebt)); $("pyAmt").focus(); } });
+$("pyPer").addEventListener("click", () => { if (payDebt) { $("pyAmt").value = String(Math.min(payDebt.per, debtLeft(payDebt))); $("pyAmt").focus(); } });
+$("pyAmt").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); savePayment(); } });
+$("ddName").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("ddPrincipal").focus(); } });
 
 /* ---- goals wiring ---- */
 $("autoBudget").addEventListener("click", suggestBudgets);
