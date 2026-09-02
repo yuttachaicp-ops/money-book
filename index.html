@@ -356,6 +356,17 @@ tfoot .lab{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:va
   .tab.on{background:transparent;box-shadow:none;color:var(--accent)}
   .app{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
   #saveChip{display:none}
+  .synchelp{margin:0 0 10px;color:var(--ink-3);font-size:13px;line-height:1.55}
+  .syncbox{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:4px}
+  .syncbox input[type="text"]{width:100%;box-sizing:border-box;margin:4px 0 10px;padding:9px 10px;
+    border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);
+    font-family:inherit;font-size:14px}
+  .syncstat{font-size:14px;color:var(--ink-2);margin-bottom:10px;line-height:1.6}
+  .syncstat b{color:var(--ink)}
+  .syncdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px}
+  .syncdot.on{background:var(--income)}
+  .syncdot.err{background:var(--expense)}
+  .syncdot.busy{background:var(--ink-3)}
 }
 
 /* ---------- summary strip (record page) ---------- */
@@ -804,6 +815,23 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
       <button class="btn sm" id="addCatBtn">เพิ่ม</button>
     </div>
 
+    <h3 class="setgroup">ซิงค์ข้อมูล</h3>
+    <p class="synchelp" id="syncHelp"></p>
+    <div class="syncbox" id="syncOff">
+      <label class="flab" for="syncLink">รหัสซิงค์</label>
+      <input type="text" id="syncLink" placeholder="วางรหัสที่ได้จากไลน์ที่นี่" autocomplete="off" spellcheck="false">
+      <div class="setrow">
+        <button class="btn sm" id="syncConnect">เชื่อมต่อ</button>
+      </div>
+    </div>
+    <div class="syncbox" id="syncOn" hidden>
+      <div class="syncstat" id="syncStat"></div>
+      <div class="setrow">
+        <button class="btn ghost sm" id="syncNowBtn">ซิงค์เดี๋ยวนี้</button>
+        <button class="btn ghost sm danger" id="syncOffBtn">เลิกซิงค์เครื่องนี้</button>
+      </div>
+    </div>
+
     <h3 class="setgroup">ข้อมูล</h3>
     <div class="setrow">
       <button class="btn ghost sm" id="backupJson">สำรองข้อมูล (JSON)</button>
@@ -957,7 +985,8 @@ const freshState = () => ({
   cats: DEFAULT_CATS.map(([name, type], i) => ({ id: "c" + i, name, type })),
   tx: [],
   goals: emptyGoals(),
-  debts: []
+  debts: [],
+  tomb: []            // รอยลบ เก็บไว้ให้เครื่องอื่นลบตามตอนซิงค์
 });
 function normalizeGoals(o) {
   const g = Object.assign(emptyGoals(), o && o.goals);
@@ -1022,6 +1051,7 @@ function readLocal() {
     if (!o || !Array.isArray(o.tx) || !Array.isArray(o.cats)) return null;
     o.goals = normalizeGoals(o);
     o.debts = Array.isArray(o.debts) ? o.debts : [];
+    o.tomb = Array.isArray(o.tomb) ? o.tomb : [];
     return o;
   } catch (e) { return null; }
 }
@@ -1042,12 +1072,218 @@ function touch() {
     toast("บันทึกไม่สำเร็จ — พื้นที่เก็บข้อมูลของเบราว์เซอร์เต็มหรือถูกปิดอยู่");
   }
   renderFoot();
+  scheduleSync();
 }
 function boot() {
   const local = readLocal();
   if (local) state = local;
   render();
   chip(local ? "บันทึกแล้ว" : "พร้อมใช้งาน", local ? "saved" : "idle");
+}
+
+/* ============ sync กับ Google Sheet ============
+   รหัสซิงค์ไม่ได้ฝังในโค้ด — ผู้ใช้วางเองแล้วเก็บไว้ในเครื่องนี้เท่านั้น
+   จึงไม่หลุดขึ้น GitHub ไปกับตัวเว็บ */
+const SKEY = "ledger-sync-v1";
+let syncing = false, syncTimer = null;
+
+function readSync() {
+  try { return JSON.parse(localStorage.getItem(SKEY) || "null"); } catch (e) { return null; }
+}
+function writeSync(c) {
+  try { localStorage.setItem(SKEY, JSON.stringify(c)); } catch (e) { /* เต็ม ไม่เป็นไร */ }
+}
+function syncOn() { const c = readSync(); return !!(c && c.url && c.key); }
+
+/* รับเฉพาะที่อยู่ของ Apps Script เท่านั้น (กันโดนหลอกให้วางลิงก์ของคนอื่น
+   แล้วข้อมูลไหลไปเครื่องแปลกหน้า) — localhost เผื่อไว้ตอนรันทดสอบบนเครื่องตัวเอง */
+function parseSyncLink(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return null;
+  const m = s.match(/^(https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec|http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/[^#?\s]*)[#?]?(.*)$/);
+  if (!m) return null;
+  const key = (m[2] || "").replace(/^k=/, "").trim();
+  if (!key) return null;
+  return { url: m[1], key };
+}
+
+function stamp(t) { t.updatedAt = Date.now(); return t; }
+
+function catById(id) { return state.cats.find((c) => c.id === id) || null; }
+function catIdByName(name, type) {
+  const nm = String(name || "").trim() || "อื่น ๆ";
+  const ty = type === "income" ? "income" : "expense";
+  const hit = state.cats.find((c) => c.name === nm && c.type === ty);
+  if (hit) return hit.id;
+  const c = { id: uid(), name: nm, type: ty };
+  state.cats.push(c);
+  return c.id;
+}
+
+/* แปลงรายการในเครื่อง → รูปแบบที่ส่งขึ้นชีต (หมวดส่งเป็น "ชื่อ" ไม่ใช่ id
+   เพราะแต่ละเครื่องมี id คนละชุด แต่ชื่อหมวดตรงกัน) */
+function toWire(t) {
+  const c = catById(t.cat);
+  return {
+    id: t.id, date: t.date, name: t.name, amount: t.amount, type: t.type,
+    cat: c ? c.name : "อื่น ๆ", expr: t.expr || "",
+    updatedAt: t.updatedAt || t.seq || 0
+  };
+}
+function fromWire(w) {
+  return {
+    id: w.id, seq: w.updatedAt || Date.now(),
+    name: String(w.name || ""), amount: Number(w.amount) || 0,
+    date: String(w.date || todayISO()),
+    cat: catIdByName(w.cat, w.type),
+    type: w.type === "income" ? "income" : "expense",
+    expr: String(w.expr || ""),
+    updatedAt: Number(w.updatedAt) || 0
+  };
+}
+
+function settingsBlob() {
+  return JSON.stringify({ cats: state.cats, goals: state.goals, debts: state.debts });
+}
+
+function syncStatus(text, kind) {
+  const el = $("syncStat");
+  if (el) el.innerHTML = '<span class="syncdot ' + kind + '"></span>' + text;
+}
+
+async function syncNow(quiet) {
+  const cfg = readSync();
+  if (!cfg || !cfg.url || syncing) return;
+  syncing = true;
+  if (!quiet) syncStatus("กำลังซิงค์…", "busy");
+
+  const mark = Date.now();
+  const pushedFrom = cfg.pushAt || 0;
+  const out = state.tx.filter((t) => (t.updatedAt || t.seq || 0) > pushedFrom).map(toWire);
+  state.tomb.forEach((d) => { if ((d.updatedAt || 0) > pushedFrom) out.push(d); });
+
+  const body = {
+    k: cfg.key, a: "sync", since: cfg.since || 0, tx: out,
+    settings: (state.updatedAt || 0) > pushedFrom
+      ? { json: settingsBlob(), updatedAt: state.updatedAt } : null
+  };
+
+  try {
+    // ส่งเป็น text/plain เพื่อไม่ให้เบราว์เซอร์ยิง preflight (Apps Script ตอบ OPTIONS ไม่ได้)
+    const res = await fetch(cfg.url, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(body),
+      redirect: "follow"
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    if (!data || !data.ok) throw new Error((data && data.error) || "ปฏิเสธคำขอ");
+
+    const n = applyRemote(data);
+    cfg.pushAt = mark;
+    cfg.since = data.nextSince || data.now || cfg.since || 0;
+    cfg.lastAt = Date.now();
+    cfg.lastErr = "";
+    writeSync(cfg);
+    if (n.changed) { touchQuiet(); render(); }
+    renderSyncBox();
+    if (!quiet && !n.changed && !out.length) toast("ข้อมูลตรงกันแล้ว");
+    else if (!quiet) toast("ซิงค์แล้ว · ส่งขึ้น " + out.length + " · รับมา " + n.applied);
+  } catch (err) {
+    cfg.lastErr = String(err && err.message || err).slice(0, 120);
+    writeSync(cfg);
+    renderSyncBox();
+    if (!quiet) toast("ซิงค์ไม่สำเร็จ — " + cfg.lastErr);
+  } finally {
+    syncing = false;
+  }
+}
+
+function applyRemote(data) {
+  let applied = 0, changed = false;
+  const byId = new Map(state.tx.map((t, i) => [t.id, i]));
+
+  (data.tx || []).forEach((w) => {
+    if (!w || !w.id) return;
+    const at = Number(w.updatedAt) || 0;
+    const i = byId.get(w.id);
+
+    if (w.deleted) {
+      if (i !== undefined) {
+        const cur = state.tx[i].updatedAt || state.tx[i].seq || 0;
+        if (at >= cur) { state.tx.splice(i, 1); rebuildIndex(byId); changed = true; applied++; }
+      }
+      if (!state.tomb.some((d) => d.id === w.id)) state.tomb.push({ id: w.id, updatedAt: at, deleted: 1 });
+      return;
+    }
+    if (i === undefined) {
+      // เคยลบไปแล้วในเครื่องนี้ และรอยลบใหม่กว่า → ไม่เอากลับมา
+      const t0 = state.tomb.find((d) => d.id === w.id);
+      if (t0 && (t0.updatedAt || 0) > at) return;
+      state.tx.push(fromWire(w)); changed = true; applied++;
+      rebuildIndex(byId);
+    } else {
+      const cur = state.tx[i].updatedAt || state.tx[i].seq || 0;
+      if (at > cur) { state.tx[i] = fromWire(w); changed = true; applied++; }
+    }
+  });
+
+  if (data.settings && data.settings.json && (Number(data.settings.updatedAt) || 0) > (state.updatedAt || 0)) {
+    try {
+      const s = JSON.parse(data.settings.json);
+      if (Array.isArray(s.cats) && s.cats.length) state.cats = mergeCats(s.cats);
+      if (s.goals) state.goals = normalizeGoals({ goals: s.goals });
+      if (Array.isArray(s.debts)) state.debts = s.debts;
+      changed = true;
+    } catch (e) { /* ข้อมูลเพี้ยน ข้ามไป */ }
+  }
+  pruneTombs();
+  return { applied, changed };
+}
+
+function rebuildIndex(map) {
+  map.clear();
+  state.tx.forEach((t, i) => map.set(t.id, i));
+}
+/* รวมหมวดจากเครื่องอื่นเข้ากับของเรา โดยไม่ทำ id เดิมพัง (รายการอ้าง id อยู่) */
+function mergeCats(remote) {
+  const out = state.cats.slice();
+  remote.forEach((rc) => {
+    if (!rc || !rc.name) return;
+    if (!out.some((c) => c.name === rc.name && c.type === rc.type)) {
+      out.push({ id: uid(), name: rc.name, type: rc.type === "income" ? "income" : "expense" });
+    }
+  });
+  return out;
+}
+function pruneTombs() {
+  const cut = Date.now() - 120 * 864e5;      // เก็บรอยลบไว้ 120 วัน
+  state.tomb = state.tomb.filter((d) => (d.updatedAt || 0) > cut);
+}
+/* บันทึกลงเครื่องโดยไม่ขยับ state.updatedAt (ของที่รับมาจากเครื่องอื่น ไม่ใช่การแก้ของเรา) */
+function touchQuiet() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+}
+function scheduleSync() {
+  if (!syncOn()) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => syncNow(true), 2500);
+}
+
+function renderSyncBox() {
+  const on = syncOn(), cfg = readSync();
+  if (!$("syncOn")) return;
+  $("syncOn").hidden = !on;
+  $("syncOff").hidden = on;
+  $("syncHelp").textContent = on
+    ? "รายการที่จดผ่านไลน์จะไหลเข้ามาที่นี่เอง และรายการที่จดในแอปก็จะขึ้นไปอยู่ในชีต ทุกเครื่องที่ใส่รหัสเดียวกันจะเห็นข้อมูลชุดเดียวกัน"
+    : "พิมพ์คำว่า “ซิงค์” ในแชทไลน์กับบอท แล้วก๊อปรหัสที่บอทส่งมาวางที่ช่องล่างนี้ — รหัสเก็บไว้ในเครื่องนี้เท่านั้น ไม่ได้อยู่ในตัวเว็บ";
+  if (!on) return;
+  const t = cfg.lastAt ? new Date(cfg.lastAt) : null;
+  const when = t ? t.toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "ยังไม่เคย";
+  if (cfg.lastErr) syncStatus("ซิงค์ล่าสุดไม่สำเร็จ<br><b>" + esc(cfg.lastErr) + "</b>", "err");
+  else syncStatus("เชื่อมต่อแล้ว · ซิงค์ล่าสุด <b>" + esc(when) + "</b>", "on");
 }
 
 /* ============ router ============ */
@@ -1388,9 +1624,11 @@ function renderDonut() {
 }
 
 function renderFoot() {
-  const msg = storageOK
-    ? "ข้อมูลเก็บอยู่ในเครื่องนี้เท่านั้น ไม่ถูกส่งไปที่ไหน — ถ้าจะย้ายไปเครื่องอื่นให้กด “สำรองข้อมูล (JSON)” แล้วไปกด “นำเข้าข้อมูล” ที่เครื่องปลายทาง"
-    : "ตอนนี้บันทึกไม่ได้ ลองปิดโหมดไม่ระบุตัวตนหรืออนุญาตให้เว็บนี้เก็บข้อมูล";
+  const msg = !storageOK
+    ? "ตอนนี้บันทึกไม่ได้ ลองปิดโหมดไม่ระบุตัวตนหรืออนุญาตให้เว็บนี้เก็บข้อมูล"
+    : syncOn()
+      ? "ซิงค์กับ Google Sheet ของคุณอยู่ ทุกเครื่องที่ใส่รหัสเดียวกันเห็นข้อมูลชุดเดียวกัน — ตั้งค่าได้ที่ปุ่ม ⚙"
+      : "ข้อมูลเก็บอยู่ในเครื่องนี้เท่านั้น ไม่ถูกส่งไปที่ไหน — เปิดการซิงค์ข้ามเครื่องได้ที่ปุ่ม ⚙ หรือย้ายด้วย “สำรองข้อมูล (JSON)”";
   const ver = swVersion ? ' · เวอร์ชัน <code>' + esc(swVersion) + "</code>" : "";
   $("footNote").innerHTML = esc(msg) + "<br>ช่องจำนวนเงินคิดเลขได้ในตัว: <code>85*3</code> = 255 · <code>(1200+300)/2</code> = 750 · <code>1200*7%</code> = 84 · ปุ่ม <code>+ VAT 7%</code> คูณ 1.07 ให้อัตโนมัติ" + ver;
 }
@@ -1783,7 +2021,8 @@ function savePayment() {
   const tx = {
     id: uid(), seq: Date.now(),
     name: (d.side === "owe" ? "ชำระ " : "รับชำระ ") + d.name,
-    amount, date, cat, type: d.side === "owe" ? "expense" : "income", expr: ""
+    amount, date, cat, type: d.side === "owe" ? "expense" : "income", expr: "",
+    updatedAt: Date.now()
   };
   state.tx.push(tx);
   (d.payments = d.payments || []).push({ id: uid(), date, amount, txId: tx.id });
@@ -1854,9 +2093,9 @@ function submitEntry() {
 
   if (editingId) {
     const t = state.tx.find((x) => x.id === editingId);
-    if (t) Object.assign(t, { name: name || catName(cat), amount, date, cat, type, expr });
+    if (t) Object.assign(t, { name: name || catName(cat), amount, date, cat, type, expr, updatedAt: Date.now() });
   } else {
-    state.tx.push({ id: uid(), seq: Date.now(), name: name || catName(cat), amount, date, cat, type, expr });
+    state.tx.push({ id: uid(), seq: Date.now(), name: name || catName(cat), amount, date, cat, type, expr, updatedAt: Date.now() });
   }
   touch();
   const was = editingId;
@@ -1887,9 +2126,13 @@ function removeTx(id) {
   const i = state.tx.findIndex((x) => x.id === id);
   if (i < 0) return;
   const [gone] = state.tx.splice(i, 1);
+  state.tomb.push({ id: gone.id, updatedAt: Date.now(), deleted: 1,
+                    date: gone.date, name: gone.name, amount: gone.amount, type: gone.type });
   if (editingId === id) resetForm();
   touch(); render();
   toast("ลบ “" + gone.name + "” แล้ว", "เลิกทำ", () => {
+    state.tomb = state.tomb.filter((d) => d.id !== gone.id);
+    gone.updatedAt = Date.now();
     state.tx.splice(i, 0, gone); touch(); render();
   });
 }
@@ -2096,7 +2339,8 @@ function saveImport() {
   const now = Date.now();
   picked.forEach((r, i) => state.tx.push({
     id: uid(), seq: now + i, name: r.name, amount: r.amount,
-    date: r.date, cat: r.cat, type: r.type, expr: r.expr && r.expr !== String(r.amount) ? r.expr : ""
+    date: r.date, cat: r.cat, type: r.type, expr: r.expr && r.expr !== String(r.amount) ? r.expr : "",
+    updatedAt: now + i
   }));
   touch(); render();
   $("importDlg").close();
@@ -2304,7 +2548,25 @@ showPage(currentPage());
 $("q").addEventListener("input", renderTable);
 $("filterType").addEventListener("change", renderTable);
 
-$("openSettings").addEventListener("click", () => { renderCatDlg(); $("setDlg").showModal(); });
+$("openSettings").addEventListener("click", () => { renderCatDlg(); renderSyncBox(); $("setDlg").showModal(); });
+
+/* ---- ปุ่มซิงค์ ---- */
+$("syncConnect").addEventListener("click", () => {
+  const cfg = parseSyncLink($("syncLink").value);
+  if (!cfg) { toast("รหัสไม่ถูกต้อง — ต้องเป็นลิงก์ที่บอทส่งมา ลงท้ายด้วย /exec#รหัส"); $("syncLink").focus(); return; }
+  writeSync({ url: cfg.url, key: cfg.key, since: 0, pushAt: 0, lastAt: 0, lastErr: "" });
+  $("syncLink").value = "";
+  renderSyncBox();
+  toast("เชื่อมต่อแล้ว กำลังดึงข้อมูล…");
+  syncNow(false);
+});
+$("syncNowBtn").addEventListener("click", () => syncNow(false));
+$("syncOffBtn").addEventListener("click", () => {
+  confirmDlg("เลิกซิงค์เครื่องนี้?", "รายการที่มีอยู่แล้วในเครื่องนี้จะยังอยู่ครบ แค่หยุดส่งขึ้นชีตและหยุดรับของใหม่ ต่อใหม่ได้ทุกเมื่อด้วยรหัสเดิม", () => {
+    try { localStorage.removeItem(SKEY); } catch (e) { /* ignore */ }
+    renderSyncBox(); toast("เลิกซิงค์แล้ว");
+  });
+});
 $("setClose").addEventListener("click", () => $("setDlg").close());
 $("addCatBtn").addEventListener("click", () => {
   const name = $("newCatName").value.trim();
@@ -2413,6 +2675,15 @@ if ("serviceWorker" in navigator) {
 }
 
 boot();
+
+/* ---- ซิงค์อัตโนมัติ: ตอนเปิด ตอนสลับกลับมา ตอนเน็ตกลับมา และทุก 5 นาที ---- */
+if (syncOn()) {
+  renderSyncBox();
+  syncNow(true);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) syncNow(true); });
+  window.addEventListener("online", () => syncNow(true));
+  setInterval(() => syncNow(true), 5 * 60 * 1000);
+}
 })();
 </script>
 </body>
