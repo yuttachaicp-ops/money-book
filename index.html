@@ -335,7 +335,8 @@ tfoot .lab{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:va
 .tab.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .pages{display:block}
 .page{display:flex;flex-direction:column;gap:16px}
-.page[hidden]{display:none}
+[hidden]{display:none !important}
+  .page[hidden]{display:none}
 .pagebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .pagebar .spacer{flex:1}
 .pagebar input[type="search"]{background:var(--surface);border:1px solid var(--line);border-radius:8px;
@@ -413,6 +414,40 @@ tfoot .lab{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:va
 @media (hover:none){.txc .rx{opacity:.75}}
 .txc .none{padding:26px 12px;text-align:center;color:var(--ink-3);font-size:13.5px}
 .txgrid .none{grid-column:1/-1;padding:26px 12px;text-align:center;color:var(--ink-3);font-size:13.5px}
+/* ---------- โหมดเลือกหลายรายการ ---------- */
+.pickbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px;
+  padding:9px 12px;background:var(--accent-soft);border:1px solid var(--line);border-radius:10px}
+.pickn{font-size:13.5px;color:var(--ink);font-weight:500}
+.picking .txc{cursor:pointer;padding-left:40px}
+.picking .txc::after{content:"";position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  width:18px;height:18px;border:2px solid var(--line-strong);border-radius:5px;background:var(--surface)}
+.picking .txc.sel{border-color:var(--accent);background:var(--accent-soft)}
+.picking .txc.sel::after{background:var(--accent);border-color:var(--accent)}
+.picking .txc.sel::before{opacity:.45}
+.pickmark{position:absolute;left:18px;top:50%;transform:translateY(-50%) rotate(-45deg);
+  width:10px;height:5px;border:solid var(--accent-ink);border-width:0 0 2px 2px;
+  pointer-events:none;opacity:0;z-index:1}
+.txc.sel .pickmark{opacity:1}
+.picking .txc .rx{display:none}
+.picking tbody tr{cursor:pointer}
+.picking tbody tr.sel{background:var(--accent-soft)}
+.picking tbody .rowacts{display:none}
+.pickcell{width:34px}
+.pickbox{width:17px;height:17px;accent-color:var(--accent)}
+
+/* ---------- ถังขยะ ---------- */
+.trrow{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line)}
+.trrow:last-child{border-bottom:0}
+.trinfo{min-width:0;flex:1}
+.trname{font-size:14px;font-weight:500;overflow-wrap:anywhere}
+.trmeta{font-size:12px;color:var(--ink-3);margin-top:2px}
+.tramt{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+  font-size:14px;white-space:nowrap}
+.tramt.in{color:var(--income)}
+.tramt.out{color:var(--expense)}
+.trbtns{display:flex;gap:4px;flex-shrink:0}
+.trempty{padding:30px 12px;text-align:center;color:var(--ink-3);font-size:13.5px}
+
 /* สรุปท้ายรายการเวลาที่แสดงเป็นการ์ด */
 .cardsum{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;
   padding:12px 16px;border-top:1px solid var(--line);color:var(--ink-2);font-size:13px}
@@ -785,13 +820,22 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
           <option value="expense">เฉพาะรายจ่าย</option>
         </select>
         <span class="spacer"></span>
+        <button class="btn ghost sm" id="pickMode">เลือก</button>
         <button class="btn ghost sm" id="exportCsv">ดาวน์โหลด CSV</button>
+      </div>
+      <div class="pickbar" id="pickBar" hidden>
+        <span class="pickn" id="pickN">เลือก 0 รายการ</span>
+        <span class="spacer"></span>
+        <button class="btn ghost sm" id="pickAll">เลือกทั้งหมด</button>
+        <button class="btn sm danger" id="pickDel" disabled>ลบที่เลือก</button>
+        <button class="btn ghost sm" id="pickCancel">ยกเลิก</button>
       </div>
   <section class="card">
     <div class="tscroll">
       <table id="tbl">
         <thead>
           <tr>
+            <th class="pickcell" id="thPick" hidden></th>
             <th style="width:104px">วันที่</th>
             <th>รายการ</th>
             <th style="width:150px">หมวดหมู่</th>
@@ -859,7 +903,22 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
       <button class="btn ghost sm" id="backupJson">สำรองข้อมูล (JSON)</button>
       <button class="btn ghost sm" id="importJson">นำเข้าข้อมูล</button>
       <input type="file" id="importFile" accept=".json,application/json" hidden>
+      <button class="btn ghost sm" id="openTrash">ถังขยะ</button>
       <button class="btn ghost sm danger" id="clearAll">ล้างข้อมูลทั้งหมด</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="trashDlg">
+  <div class="dlg-head">
+    <h2>ถังขยะ</h2>
+    <button class="iconbtn" id="trClose" aria-label="ปิด">✕</button>
+  </div>
+  <div class="dlg-body">
+    <p class="synchelp">รายการที่ลบไปเก็บไว้ที่นี่ 1 ปี กู้คืนได้ทุกเมื่อ — กดลบถาวรถ้าไม่อยากเห็นอีก</p>
+    <div id="trashList"></div>
+    <div class="setrow" id="trashActs" hidden>
+      <button class="btn ghost sm danger" id="trPurgeAll">ล้างถังขยะทั้งหมด</button>
     </div>
   </div>
 </dialog>
@@ -1182,7 +1241,11 @@ async function syncNow(quiet) {
   const mark = Date.now();
   const pushedFrom = cfg.pushAt || 0;
   const out = state.tx.filter((t) => (t.updatedAt || t.seq || 0) > pushedFrom).map(toWire);
-  state.tomb.forEach((d) => { if ((d.updatedAt || 0) > pushedFrom) out.push(d); });
+  state.tomb.forEach((d) => {
+    if ((d.updatedAt || 0) <= pushedFrom) return;
+    out.push({ id: d.id, date: d.date, name: d.name, amount: d.amount, type: d.type,
+               cat: catName(d.cat), expr: d.expr || "", updatedAt: d.updatedAt, deleted: 1 });
+  });
 
   const body = {
     k: cfg.key, a: "sync", since: cfg.since || 0, tx: out,
@@ -1232,11 +1295,23 @@ function applyRemote(data) {
     const i = byId.get(w.id);
 
     if (w.deleted) {
+      let info = null;
       if (i !== undefined) {
         const cur = state.tx[i].updatedAt || state.tx[i].seq || 0;
-        if (at >= cur) { state.tx.splice(i, 1); rebuildIndex(byId); changed = true; applied++; }
+        if (at >= cur) {
+          info = state.tx[i];
+          state.tx.splice(i, 1); rebuildIndex(byId); changed = true; applied++;
+        }
       }
-      if (!state.tomb.some((d) => d.id === w.id)) state.tomb.push({ id: w.id, updatedAt: at, deleted: 1 });
+      if (!state.tomb.some((d) => d.id === w.id)) {
+        // เก็บข้อมูลเท่าที่รู้ ถังขยะจะได้โชว์ได้ว่าเป็นรายการอะไร
+        const src = info || w;
+        state.tomb.push({
+          id: w.id, updatedAt: at, deleted: 1, delAt: Date.now(),
+          date: src.date, name: src.name, amount: Number(src.amount) || 0,
+          type: src.type, cat: info ? info.cat : undefined, expr: src.expr || ""
+        });
+      }
       return;
     }
     if (i === undefined) {
@@ -1280,7 +1355,7 @@ function mergeCats(remote) {
   return out;
 }
 function pruneTombs() {
-  const cut = Date.now() - 120 * 864e5;      // เก็บรอยลบไว้ 120 วัน
+  const cut = Date.now() - 365 * 864e5;      // เก็บรอยลบไว้ 1 ปี (ใช้เป็นถังขยะด้วย)
   state.tomb = state.tomb.filter((d) => (d.updatedAt || 0) > cut);
 }
 /* บันทึกลงเครื่องโดยไม่ขยับ state.updatedAt (ของที่รับมาจากเครื่องอื่น ไม่ใช่การแก้ของเรา) */
@@ -1395,7 +1470,9 @@ function renderStrip() {
    run = ยอดคงเหลือสะสม ใส่มาเฉพาะตอนแสดงในหน้ารายการทั้งหมด */
 function txCard(t, run) {
   const isIn = t.type === "income";
-  return `<li class="txc ${isIn ? "in" : "out"}" data-id="${t.id}">
+  const sel = picking && picked.has(t.id);
+  return `<li class="txc ${isIn ? "in" : "out"}${sel ? " sel" : ""}" data-id="${t.id}">
+    ${picking ? '<span class="pickmark"></span>' : ""}
     <div class="top">
       <span class="cdate">${esc(thDate(t.date))}</span>
       <span class="tag ${isIn ? "in" : "out"}">${esc(catName(t.cat))}</span>
@@ -1459,7 +1536,8 @@ function renderTable() {
   $("tbody").innerHTML = !cards ? view.map((t) => {
     const isIn = t.type === "income";
     const r = run.get(t.id);
-    return `<tr data-id="${t.id}">
+    return `<tr data-id="${t.id}"${picking && picked.has(t.id) ? ' class="sel"' : ""}>
+      ${picking ? `<td class="pickcell"><input type="checkbox" class="pickbox" ${picked.has(t.id) ? "checked" : ""} aria-label="เลือก ${esc(t.name)}"></td>` : ""}
       <td class="date">${esc(thDate(t.date))}</td>
       <td class="name">${esc(t.name)}${t.expr ? `<div style="font-size:11.5px;color:var(--ink-3);font-family:'IBM Plex Mono',monospace">${esc(t.expr)}</div>` : ""}</td>
       <td><span class="tag ${isIn ? "in" : "out"}">${esc(catName(t.cat))}</span></td>
@@ -1480,13 +1558,80 @@ function renderTable() {
     <span class="in">รายรับ <b>${fmt(inc)}</b></span>
     <span class="out">รายจ่าย <b>${fmt(exp)}</b></span>
     <span class="${net < 0 ? "out" : ""}">คงเหลือ <b>${fmt(net)}</b></span>`;
+  $("thPick").hidden = !picking;
   $("tfoot").innerHTML = view.length ? `<tr>
-    <td colspan="3" class="lab">รวม ${view.length} รายการ</td>
+    <td colspan="${picking ? 4 : 3}" class="lab">รวม ${view.length} รายการ</td>
     <td class="r money in">${fmt(inc)}</td>
     <td class="r money out">${fmt(exp)}</td>
     <td class="r money${inc - exp < 0 ? " out" : ""}">${fmt(inc - exp)}</td>
     <td></td></tr>` : "";
 }
+/* ============ เลือกหลายรายการ ============ */
+let picking = false;
+const picked = new Set();
+
+function setPicking(on) {
+  picking = on;
+  picked.clear();
+  document.body.classList.toggle("picking", on);
+  $("pickBar").hidden = !on;
+  $("pickMode").hidden = on;
+  updatePickBar();
+  renderTable();
+}
+function togglePick(id) {
+  if (picked.has(id)) picked.delete(id); else picked.add(id);
+  updatePickBar();
+  renderTable();
+}
+function updatePickBar() {
+  const n = picked.size;
+  $("pickN").textContent = n ? "เลือก " + n + " รายการ" : "แตะรายการที่ต้องการลบ";
+  $("pickDel").disabled = !n;
+  const total = visibleTx().length;
+  $("pickAll").textContent = (n && n >= total) ? "ไม่เลือกเลย" : "เลือกทั้งหมด";
+}
+function deletePicked() {
+  const ids = [...picked];
+  if (!ids.length) return;
+  const list = state.tx.filter((t) => picked.has(t.id));
+  const sum = list.reduce((a, t) => a + (t.type === "income" ? t.amount : -t.amount), 0);
+  const names = list.slice(0, 3).map((t) => t.name).join(", ") + (list.length > 3 ? " และอีก " + (list.length - 3) : "");
+  confirmDlg("ลบ " + ids.length + " รายการ?",
+    names + "\n\nยอดรวมที่จะหายไป " + fmt(Math.abs(sum)) + " บาท\n\nกู้คืนได้ที่ ⚙ → ถังขยะ",
+    () => {
+      dropTx(ids, "ลบ " + ids.length + " รายการแล้ว");
+      setPicking(false);
+    });
+}
+
+/* ============ ถังขยะ ============ */
+function renderTrash() {
+  const el = $("trashList");
+  if (!el) return;
+  const items = trashItems();
+  $("trashActs").hidden = !items.length;
+  if (!items.length) {
+    el.innerHTML = '<div class="trempty">ถังขยะว่าง</div>';
+    return;
+  }
+  el.innerHTML = items.map((d) => {
+    const isIn = d.type === "income";
+    const when = d.delAt ? new Date(d.delAt).toLocaleDateString("th-TH", { day: "numeric", month: "short" }) : "";
+    return `<div class="trrow" data-id="${esc(d.id)}">
+      <div class="trinfo">
+        <div class="trname">${esc(d.name || "(ไม่มีชื่อ)")}</div>
+        <div class="trmeta">${esc(d.date ? thDate(d.date) : "")}${when ? " · ลบเมื่อ " + esc(when) : ""}</div>
+      </div>
+      <span class="tramt ${isIn ? "in" : "out"}">${isIn ? "+" : "−"}${fmt(Number(d.amount) || 0)}</span>
+      <span class="trbtns">
+        <button class="btn ghost sm" data-tr="restore">กู้คืน</button>
+        <button class="iconbtn" data-tr="purge" title="ลบถาวร" aria-label="ลบถาวร">✕</button>
+      </span>
+    </div>`;
+  }).join("");
+}
+
 /* จอกว้างใช้ตาราง (ดูตัวเลขเทียบกันง่าย) จอแคบใช้การ์ด */
 const wideMQ = window.matchMedia("(min-width: 720px)");
 wideMQ.addEventListener("change", () => renderTable());
@@ -2172,20 +2317,70 @@ function startEdit(id) {
   window.scrollTo({ top: 0, behavior: "smooth" });
   $("txName").focus();
 }
-function removeTx(id) {
-  const i = state.tx.findIndex((x) => x.id === id);
-  if (i < 0) return;
-  const [gone] = state.tx.splice(i, 1);
-  state.tomb.push({ id: gone.id, updatedAt: Date.now(), deleted: 1,
-                    date: gone.date, name: gone.name, amount: gone.amount, type: gone.type });
-  if (editingId === id) resetForm();
+/* เก็บรอยลบพร้อมข้อมูลเต็ม เพื่อให้ถังขยะโชว์และกู้คืนได้ และให้เครื่องอื่นลบตาม */
+function makeTomb(t) {
+  return { id: t.id, updatedAt: Date.now(), deleted: 1,
+           date: t.date, name: t.name, amount: t.amount, type: t.type,
+           cat: t.cat, expr: t.expr || "", delAt: Date.now() };
+}
+
+function removeTx(id, opts) {
+  const t = state.tx.find((x) => x.id === id);
+  if (!t) return;
+  const go = () => dropTx([id], "ลบ “" + t.name + "” แล้ว");
+  if (opts && opts.skipConfirm) return go();
+  confirmDlg("ลบรายการนี้?",
+    t.name + "  " + (t.type === "income" ? "+" : "−") + fmt(t.amount) +
+    "\n" + thDate(t.date) + " · " + catName(t.cat) +
+    "\n\nกู้คืนได้ที่ ⚙ → ถังขยะ", go);
+}
+
+/* ลบจริง (ใช้ทั้งลบเดี่ยวและลบหลายรายการ) */
+function dropTx(ids, msg) {
+  const set = new Set(ids);
+  const gone = state.tx.filter((t) => set.has(t.id));
+  if (!gone.length) return;
+  const at = [];
+  gone.forEach((t) => {
+    at.push(state.tx.indexOf(t));
+    state.tomb.push(makeTomb(t));
+  });
+  state.tx = state.tx.filter((t) => !set.has(t.id));
+  if (set.has(editingId)) resetForm();
   touch(); render();
-  toast("ลบ “" + gone.name + "” แล้ว", "เลิกทำ", () => {
-    state.tomb = state.tomb.filter((d) => d.id !== gone.id);
-    gone.updatedAt = Date.now();
-    state.tx.splice(i, 0, gone); touch(); render();
+  toast(msg, "เลิกทำ", () => {
+    state.tomb = state.tomb.filter((d) => !set.has(d.id));
+    gone.forEach((t) => { t.updatedAt = Date.now(); state.tx.push(t); });
+    touch(); render();
   });
 }
+
+/* กู้คืนจากถังขยะ */
+function restoreTx(id) {
+  const d = state.tomb.find((x) => x.id === id);
+  if (!d) return;
+  state.tomb = state.tomb.filter((x) => x.id !== id);
+  state.tx.push({
+    id: d.id, seq: Date.now(), name: d.name || "(ไม่มีชื่อ)",
+    amount: Number(d.amount) || 0, date: d.date || todayISO(),
+    cat: catExists(d.cat) ? d.cat : catIdByName("อื่น ๆ", d.type === "income" ? "income" : "expense"),
+    type: d.type === "income" ? "income" : "expense",
+    expr: d.expr || "", updatedAt: Date.now()
+  });
+  touch(); render(); renderTrash();
+  toast("กู้คืน “" + (d.name || "รายการ") + "” แล้ว");
+}
+function catExists(id) { return !!state.cats.find((c) => c.id === id); }
+
+/* ลบถาวร = ซ่อนจากถังขยะ แต่ยังเก็บรอยไว้ ไม่ให้ฟื้นกลับมาตอนซิงค์ */
+function purgeTomb(ids) {
+  const set = new Set(ids);
+  state.tomb.forEach((d) => { if (set.has(d.id)) d.purged = 1; });
+  touch(); renderTrash();
+}
+const trashItems = () => state.tomb
+  .filter((d) => !d.purged && d.name !== undefined)
+  .sort((a, b) => (b.delAt || b.updatedAt || 0) - (a.delAt || a.updatedAt || 0));
 
 /* ============ categories ============ */
 function renderCatDlg() {
@@ -2467,6 +2662,8 @@ $("keys").addEventListener("click", (e) => {
 });
 
 $("tbody").addEventListener("click", (e) => {
+  const tr = e.target.closest("tr[data-id]");
+  if (picking && tr) return togglePick(tr.dataset.id);
   const btn = e.target.closest("button[data-act]"); if (!btn) return;
   const id = btn.closest("tr").dataset.id;
   if (btn.dataset.act === "edit") startEdit(id);
@@ -2591,16 +2788,49 @@ function renderCount() {
   const el = $(id);
   if (!el) return;
   el.addEventListener("click", (e) => {
+    const li = e.target.closest("li[data-id]");
+    if (picking && id === "cardlist" && li) return togglePick(li.dataset.id);
     const btn = e.target.closest("button[data-act]"); if (!btn) return;
     const tid = btn.closest("li").dataset.id;
     if (btn.dataset.act === "edit") startEdit(tid); else removeTx(tid);
   });
 });
 
-window.addEventListener("hashchange", () => { showPage(currentPage()); window.scrollTo({ top: 0 }); });
+/* ---- ปุ่มโหมดเลือก ---- */
+$("pickMode").addEventListener("click", () => setPicking(true));
+$("pickCancel").addEventListener("click", () => setPicking(false));
+$("pickDel").addEventListener("click", deletePicked);
+$("pickAll").addEventListener("click", () => {
+  const all = visibleTx();
+  if (picked.size >= all.length) picked.clear();
+  else all.forEach((t) => picked.add(t.id));
+  updatePickBar(); renderTable();
+});
+
+/* ---- ถังขยะ ---- */
+$("openTrash").addEventListener("click", () => { renderTrash(); $("trashDlg").showModal(); });
+$("trClose").addEventListener("click", () => $("trashDlg").close());
+$("trashList").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-tr]"); if (!btn) return;
+  const id = btn.closest(".trrow").dataset.id;
+  if (btn.dataset.tr === "restore") return restoreTx(id);
+  const d = state.tomb.find((x) => x.id === id);
+  confirmDlg("ลบถาวร?", (d && d.name ? "“" + d.name + "” " : "") +
+    "จะหายไปจากถังขยะและกู้คืนไม่ได้อีก", () => purgeTomb([id]));
+});
+$("trPurgeAll").addEventListener("click", () => {
+  const items = trashItems();
+  confirmDlg("ล้างถังขยะ?", items.length + " รายการจะหายไปถาวร กู้คืนไม่ได้อีก",
+    () => purgeTomb(items.map((d) => d.id)));
+});
+
+window.addEventListener("hashchange", () => {
+  if (picking) setPicking(false);
+  showPage(currentPage()); window.scrollTo({ top: 0 });
+});
 showPage(currentPage());
-$("q").addEventListener("input", renderTable);
-$("filterType").addEventListener("change", renderTable);
+$("q").addEventListener("input", () => { if (picking) { picked.clear(); updatePickBar(); } renderTable(); });
+$("filterType").addEventListener("change", () => { if (picking) { picked.clear(); updatePickBar(); } renderTable(); });
 
 $("openSettings").addEventListener("click", () => { renderCatDlg(); renderSyncBox(); $("setDlg").showModal(); });
 
