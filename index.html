@@ -1050,7 +1050,8 @@ const DEFAULT_CATS = [
   ["อาหาร/เครื่องดื่ม","expense"],["เดินทาง","expense"],["ที่พัก/บ้าน","expense"],
   ["ของใช้ในบ้าน","expense"],["ช้อปปิ้ง","expense"],["สุขภาพ","expense"],
   ["น้ำ/ไฟ/เน็ต","expense"],["ต้นทุนสินค้า","expense"],["ค่าจ้าง/เงินเดือนพนักงาน","expense"],
-  ["การตลาด","expense"],["ภาษี/ค่าธรรมเนียม","expense"],["อื่น ๆ","expense"],
+  ["การตลาด","expense"],["ภาษี/ค่าธรรมเนียม","expense"],
+  ["บัตรเครดิต","expense"],["ออมทอง","expense"],["อื่น ๆ","expense"],
   ["เงินเดือน","income"],["ขายสินค้า","income"],["ค่าบริการ","income"],
   ["ดอกเบี้ย/ปันผล","income"],["รายได้เสริม","income"],["อื่น ๆ","income"]
 ];
@@ -1060,8 +1061,14 @@ const emptyGoals = () => ({
   cats: {},                                   // งบต่อหมวด { catId: จำนวน }
   save: { target: 0, deadline: "", from: "" } // เป้าเก็บเงิน
 });
+/* หมวดที่เพิ่มเข้ามาหลังปล่อยเวอร์ชันแรก — เติมให้เครื่องที่มีข้อมูลอยู่แล้วครั้งเดียว
+   เติมแค่รายชื่อในนี้ ไม่ไปรื้อหมวดที่ผู้ใช้ลบทิ้งเองกลับมา */
+const CATS_V = 2;
+const CATS_ADDED = { 2: [["บัตรเครดิต", "expense"], ["ออมทอง", "expense"]] };
+
 const freshState = () => ({
   v: 1,
+  catsV: CATS_V,
   updatedAt: 0,
   cats: DEFAULT_CATS.map(([name, type], i) => ({ id: "c" + i, name, type })),
   tx: [],
@@ -1133,8 +1140,25 @@ function readLocal() {
     o.goals = normalizeGoals(o);
     o.debts = Array.isArray(o.debts) ? o.debts : [];
     o.tomb = Array.isArray(o.tomb) ? o.tomb : [];
+    o._migrated = migrateCats(o);
     return o;
   } catch (e) { return null; }
+}
+/* คืนค่า true ถ้ามีอะไรเปลี่ยน เพื่อให้ผู้เรียกบันทึกลงเครื่อง
+   ถ้าไม่บันทึก catsV กลับไป มันจะเติมใหม่ทุกครั้งที่เปิด
+   แล้วหมวดที่ผู้ใช้ลบทิ้งจะฟื้นกลับมาเรื่อย ๆ */
+function migrateCats(o) {
+  const from = Number(o.catsV) || 1;
+  if (from >= CATS_V) return false;
+  for (let v = from + 1; v <= CATS_V; v++) {
+    (CATS_ADDED[v] || []).forEach(([name, type]) => {
+      if (!o.cats.some((c) => c.name === name && c.type === type)) {
+        o.cats.push({ id: uid(), name, type });
+      }
+    });
+  }
+  o.catsV = CATS_V;
+  return true;
 }
 function chip(text, st) {
   const c = $("saveChip");
@@ -1157,7 +1181,12 @@ function touch() {
 }
 function boot() {
   const local = readLocal();
-  if (local) state = local;
+  if (local) {
+    const migrated = local._migrated;
+    delete local._migrated;
+    state = local;
+    if (migrated) touchQuiet();          // จำไว้ว่าเติมหมวดใหม่ไปแล้ว
+  }
   render();
   chip(local ? "บันทึกแล้ว" : "พร้อมใช้งาน", local ? "saved" : "idle");
 }
