@@ -384,21 +384,41 @@ tfoot .lab{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:va
 .strip .sn.neg b{color:var(--expense)}
 @media (max-width:480px){.strip{gap:12px}.strip .sn{margin-left:0;width:100%}}
 
-/* ---------- recent list (record page) ---------- */
-.recent{list-style:none;margin:0;padding:6px}
-.recent li{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:12px;align-items:center;
-  padding:8px 10px;border-radius:8px}
-.recent li:hover{background:var(--surface-2)}
-.recent .rd{font-size:12.5px;color:var(--ink-3);white-space:nowrap}
-.recent .rn{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px}
-.recent .rn b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
-.recent .ra{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:14px}
-.recent .ra.in{color:var(--income)}
-.recent .ra.out{color:var(--expense)}
-.recent .rx{display:flex;gap:2px;opacity:.35;transition:opacity .12s}
-.recent li:hover .rx,.recent .rx:focus-within{opacity:1}
-.recent .none{padding:26px 12px;text-align:center;color:var(--ink-3);font-size:13.5px}
-@media (max-width:480px){.recent li{grid-template-columns:minmax(0,1fr) auto auto;gap:8px}.recent .rd{display:none}}
+/* ---------- การ์ดรายการ (ใช้ทั้งหน้าบันทึกและหน้ารายการทั้งหมด) ---------- */
+.txgrid{list-style:none;margin:0;padding:10px;display:grid;gap:10px;
+  grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+.txc{position:relative;display:flex;flex-direction:column;background:var(--surface);
+  border:1px solid var(--line);border-radius:12px;padding:11px 13px 11px 15px;
+  overflow:hidden;transition:border-color .12s,box-shadow .12s}
+.txc::before{content:"";position:absolute;inset:0 auto 0 0;width:4px}
+.txc.in::before{background:var(--income)}
+.txc.out::before{background:var(--expense)}
+.txc:hover{border-color:var(--line-strong);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.txc .top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.txc .cdate{font-size:12.5px;color:var(--ink-3);white-space:nowrap}
+.txc .top .tag{margin-left:auto;max-width:60%;overflow:hidden;text-overflow:ellipsis}
+.txc .cname{font-size:15px;font-weight:500;line-height:1.4;overflow-wrap:anywhere}
+.txc .cexpr{margin-top:3px;font-size:11.5px;color:var(--ink-3);
+  font-family:"IBM Plex Mono",monospace;overflow-wrap:anywhere}
+.txc .bot{display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:8px}
+.txc .camt{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+  font-size:18px;line-height:1.2;white-space:nowrap}
+.txc.in .camt{color:var(--income)}
+.txc.out .camt{color:var(--expense)}
+.txc .crun{font-size:11.5px;color:var(--ink-3);margin-top:3px;
+  font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.txc .crun.neg{color:var(--expense)}
+.txc .rx{display:flex;gap:2px;margin-left:auto;opacity:.4;transition:opacity .12s}
+.txc:hover .rx,.txc .rx:focus-within{opacity:1}
+@media (hover:none){.txc .rx{opacity:.75}}
+.txc .none{padding:26px 12px;text-align:center;color:var(--ink-3);font-size:13.5px}
+.txgrid .none{grid-column:1/-1;padding:26px 12px;text-align:center;color:var(--ink-3);font-size:13.5px}
+/* สรุปท้ายรายการเวลาที่แสดงเป็นการ์ด */
+.cardsum{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;
+  padding:12px 16px;border-top:1px solid var(--line);color:var(--ink-2);font-size:13px}
+.cardsum b{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-weight:500}
+.cardsum .in b{color:var(--income)}
+.cardsum .out b{color:var(--expense)}
 
 /* ---------- settings dialog ---------- */
 .setgroup{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);
@@ -658,7 +678,7 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
           <h2>รายการล่าสุด</h2>
           <a class="linky" href="#/list">ดูทั้งหมด →</a>
         </div>
-        <ul class="recent" id="recent"></ul>
+        <ul class="txgrid" id="recent"></ul>
       </section>
     </section>
 
@@ -785,6 +805,8 @@ dialog::backdrop{background:rgba(16,22,21,.45);backdrop-filter:blur(2px)}
         <tfoot id="tfoot"></tfoot>
       </table>
     </div>
+    <ul class="txgrid" id="cardlist" hidden></ul>
+    <div class="cardsum" id="cardsum" hidden></div>
     <div class="empty" id="empty" hidden>
       <strong>ยังไม่มีรายการในช่วงนี้</strong>
       <span>ไปที่หน้า <a class="linky" href="#/record">บันทึก</a> เพื่อเพิ่มรายการ</span>
@@ -1369,28 +1391,39 @@ function renderStrip() {
     <span class="se"><i></i>${fmt0(exp)}</span>
     <span class="sn${net < 0 ? " neg" : ""}">คงเหลือ <b>${fmt0(net)}</b></span>`;
 }
+/* การ์ดหนึ่งใบ ใช้ร่วมกันทั้งหน้าบันทึกและหน้ารายการทั้งหมด
+   run = ยอดคงเหลือสะสม ใส่มาเฉพาะตอนแสดงในหน้ารายการทั้งหมด */
+function txCard(t, run) {
+  const isIn = t.type === "income";
+  return `<li class="txc ${isIn ? "in" : "out"}" data-id="${t.id}">
+    <div class="top">
+      <span class="cdate">${esc(thDate(t.date))}</span>
+      <span class="tag ${isIn ? "in" : "out"}">${esc(catName(t.cat))}</span>
+    </div>
+    <div class="cname">${esc(t.name)}</div>
+    ${t.expr ? `<div class="cexpr">${esc(t.expr)}</div>` : ""}
+    <div class="bot">
+      <div>
+        <div class="camt">${isIn ? "+" : "−"}${fmt(t.amount)}</div>
+        ${run === undefined ? "" : `<div class="crun${run < 0 ? " neg" : ""}">คงเหลือ ${fmt(run)}</div>`}
+      </div>
+      <span class="rx">
+        <button class="iconbtn" data-act="edit" title="แก้ไข" aria-label="แก้ไข ${esc(t.name)}">✎</button>
+        <button class="iconbtn" data-act="del" title="ลบ" aria-label="ลบ ${esc(t.name)}">🗑</button>
+      </span>
+    </div>
+  </li>`;
+}
+
 function renderRecent() {
   const el = $("recent");
   if (!el) return;
   const rows = [...state.tx]
     .sort((a, b) => a.date === b.date ? (b.seq || 0) - (a.seq || 0) : (a.date < b.date ? 1 : -1))
     .slice(0, 8);
-  if (!rows.length) {
-    el.innerHTML = '<li class="none">ยังไม่มีรายการ — กรอกช่องด้านบนเพื่อเริ่มบันทึกรายการแรก</li>';
-    return;
-  }
-  el.innerHTML = rows.map((t) => {
-    const isIn = t.type === "income";
-    return `<li data-id="${t.id}">
-      <span class="rd">${esc(thDate(t.date))}</span>
-      <span class="rn"><b>${esc(t.name)}</b><span class="tag ${isIn ? "in" : "out"}">${esc(catName(t.cat))}</span></span>
-      <span class="ra ${isIn ? "in" : "out"}">${isIn ? "+" : "−"}${fmt(t.amount)}</span>
-      <span class="rx">
-        <button class="iconbtn" data-act="edit" title="แก้ไข" aria-label="แก้ไข ${esc(t.name)}">✎</button>
-        <button class="iconbtn" data-act="del" title="ลบ" aria-label="ลบ ${esc(t.name)}">🗑</button>
-      </span>
-    </li>`;
-  }).join("");
+  el.innerHTML = rows.length
+    ? rows.map((t) => txCard(t)).join("")
+    : '<li class="none">ยังไม่มีรายการ — กรอกช่องด้านบนเพื่อเริ่มบันทึกรายการแรก</li>';
 }
 function renderTiles() {
   const rows = state.tx.filter(inPeriod);
@@ -1412,10 +1445,18 @@ function renderTable() {
   for (const t of chrono) { acc += t.type === "income" ? t.amount : -t.amount; run.set(t.id, acc); }
   const view = [...chrono].reverse();
 
+  const cards = !wideMQ.matches;                 // จอแคบ = การ์ด, จอกว้าง = ตาราง
   $("empty").hidden = view.length > 0;
+  $("tbl").closest(".tscroll").hidden = cards || !view.length;
   $("tbl").style.display = view.length ? "" : "none";
+  $("cardlist").hidden = !cards || !view.length;
+  $("cardsum").hidden = !cards || !view.length;
 
-  $("tbody").innerHTML = view.map((t) => {
+  $("cardlist").innerHTML = cards
+    ? view.map((t) => txCard(t, run.get(t.id))).join("")
+    : "";
+
+  $("tbody").innerHTML = !cards ? view.map((t) => {
     const isIn = t.type === "income";
     const r = run.get(t.id);
     return `<tr data-id="${t.id}">
@@ -1430,10 +1471,15 @@ function renderTable() {
         <button class="iconbtn" data-act="del" title="ลบ" aria-label="ลบ">🗑</button>
       </div></td>
     </tr>`;
-  }).join("");
+  }).join("") : "";
 
   const inc = rows.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
   const exp = rows.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const net = inc - exp;
+  $("cardsum").innerHTML = `<span>รวม <b>${view.length}</b> รายการ</span>
+    <span class="in">รายรับ <b>${fmt(inc)}</b></span>
+    <span class="out">รายจ่าย <b>${fmt(exp)}</b></span>
+    <span class="${net < 0 ? "out" : ""}">คงเหลือ <b>${fmt(net)}</b></span>`;
   $("tfoot").innerHTML = view.length ? `<tr>
     <td colspan="3" class="lab">รวม ${view.length} รายการ</td>
     <td class="r money in">${fmt(inc)}</td>
@@ -1441,6 +1487,10 @@ function renderTable() {
     <td class="r money${inc - exp < 0 ? " out" : ""}">${fmt(inc - exp)}</td>
     <td></td></tr>` : "";
 }
+/* จอกว้างใช้ตาราง (ดูตัวเลขเทียบกันง่าย) จอแคบใช้การ์ด */
+const wideMQ = window.matchMedia("(min-width: 720px)");
+wideMQ.addEventListener("change", () => renderTable());
+
 /* ============ charts ============ */
 const SLOTS = ["--s1","--s2","--s3","--s4","--s5","--s6","--s7","--s8"];
 // colour follows the CATEGORY, never its rank: the slot comes from the category's
@@ -2537,10 +2587,14 @@ function renderCount() {
   setTimeout(() => { goPage("record"); openImport(shared); }, 350);
 })();
 
-$("recent").addEventListener("click", (e) => {
-  const btn = e.target.closest("button[data-act]"); if (!btn) return;
-  const id = btn.closest("li").dataset.id;
-  if (btn.dataset.act === "edit") startEdit(id); else removeTx(id);
+["recent", "cardlist"].forEach((id) => {
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-act]"); if (!btn) return;
+    const tid = btn.closest("li").dataset.id;
+    if (btn.dataset.act === "edit") startEdit(tid); else removeTx(tid);
+  });
 });
 
 window.addEventListener("hashchange", () => { showPage(currentPage()); window.scrollTo({ top: 0 }); });
